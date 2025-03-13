@@ -1,19 +1,18 @@
-# app.py
 from flask import Flask, jsonify, request
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_cors import CORS  # Import Flask-CORS
 from auth import authenticate_user, register_user
 import datetime
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+
 app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Replace with a secure key
 jwt = JWTManager(app)
 
-# Health check route
 @app.route('/')
 def index():
     return jsonify(message="Flask API is running!")
-
-# Authentication endpoints will be added below...
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -38,4 +37,5 @@ def profile():
     current_user = get_jwt_identity()
     return jsonify(message=f"Hello, {current_user}!"), 200
 
-
+if __name__ == '__main__':
+    app.run(debug=True)
