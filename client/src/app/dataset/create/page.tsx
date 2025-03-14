@@ -70,7 +70,7 @@ const CreateDatasetPage: React.FC = () => {
 
   const handleProceed = () => {
     // Navigate to the next page where the CSV data is used
-    router.push("/dataset/next");
+    router.push("/dataset/analysis");
   };
 
   return (

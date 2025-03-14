@@ -36,7 +36,7 @@ const DatasetUploadPage: React.FC = () => {
         // Store CSV data in context
         setCsvData(text);
         // Navigate to next page where CSV data can be used (adjust the route as needed)
-        router.push("/models");
+        router.push("/dataset/analysis");
       } else {
         setUploadError("Error reading file.");
       }

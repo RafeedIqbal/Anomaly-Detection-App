@@ -28,13 +28,10 @@ def XGB_MT1R1(df, target='Toronto'):
 
     # Train XGBoost model with evaluation results recorded
     model = xgb.XGBRegressor(n_estimators=100, eval_metric="rmse", use_label_encoder=False)
-    evals_result = {}
     model.fit(
         X_train, y_train,
         eval_set=[(X_train, y_train), (X_test, y_test)],
-        eval_metric="rmse",
         verbose=False,
-        evals_result=evals_result
     )
 
     # Get predictions

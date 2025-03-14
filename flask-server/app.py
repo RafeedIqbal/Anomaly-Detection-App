@@ -51,7 +51,7 @@ def train_route():
 
     # Read CSV file into a DataFrame
     try:
-        df = pd.read_csv(file)
+        df = pd.read_csv(file, low_memory=False)
     except Exception as e:
         return jsonify({"error": f"Failed to read CSV file: {str(e)}"}), 400
 
@@ -71,7 +71,7 @@ def lstm_train_route():
         return jsonify({"error": "No file provided"}), 400
     file = request.files['file']
     try:
-        df = pd.read_csv(file)
+        df = pd.read_csv(file, low_memory=False)
     except Exception as e:
         return jsonify({"error": f"Failed to read CSV file: {str(e)}"}), 400
     target = request.form.get('target', 'Toronto')
