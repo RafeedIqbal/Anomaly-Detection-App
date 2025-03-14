@@ -125,22 +125,8 @@ export default function AnalysisPage() {
       </Button>
 
       <Grid container spacing={2} alignItems="stretch">
-        {/* Left Column: Dashboard and Plots */}
-        <Grid item xs={12} md={8}>
-          <Paper
-            sx={{
-              backgroundColor: "#333",
-              color: "white",
-              p: 2,
-              mb: 2,
-              minHeight: 100,
-            }}
-          >
-            <Typography variant="h6">Analysis Dashboard</Typography>
-            <Typography variant="body2">
-              Overview: This section shows the performance graphs for both models.
-            </Typography>
-          </Paper>
+        {/* Left Column: All Graphs */}
+        <Grid item xs={12} md={9}>
 
           {xgbResult && (
             <>
@@ -150,7 +136,6 @@ export default function AnalysisPage() {
                   color: "white",
                   p: 2,
                   mb: 2,
-                  minHeight: 200,
                 }}
               >
                 <Typography variant="h6" sx={{ mb: 1 }}>
@@ -160,9 +145,9 @@ export default function AnalysisPage() {
                   src={`data:image/png;base64,${xgbResult.loss_curve}`}
                   alt="XGB Loss Curve"
                   unoptimized
-                  width={600}
-                  height={300}
-                  style={{ width: "100%", maxHeight: "300px", objectFit: "contain" }}
+                  width={800}
+                  height={400}
+                  style={{ width: "100%", maxHeight: "400px", objectFit: "contain" }}
                 />
               </Paper>
 
@@ -172,7 +157,6 @@ export default function AnalysisPage() {
                   color: "white",
                   p: 2,
                   mb: 2,
-                  minHeight: 200,
                 }}
               >
                 <Typography variant="h6" sx={{ mb: 1 }}>
@@ -182,41 +166,64 @@ export default function AnalysisPage() {
                   src={`data:image/png;base64,${xgbResult.performance_plot}`}
                   alt="XGB Performance Plot"
                   unoptimized
-                  width={600}
-                  height={300}
-                  style={{ width: "100%", maxHeight: "300px", objectFit: "contain" }}
+                  width={800}
+                  height={400}
+                  style={{ width: "100%", maxHeight: "400px", objectFit: "contain" }}
                 />
               </Paper>
             </>
           )}
 
           {lstmResult && (
-            <Paper
-              sx={{
-                backgroundColor: "#333",
-                color: "white",
-                p: 2,
-                mb: 2,
-                minHeight: 200,
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                Plot of Test Predictions for Model #2 (LSTM)
-              </Typography>
-              <Image
-                src={`data:image/png;base64,${lstmResult.test_predictions_plot}`}
-                alt="LSTM Test Predictions"
-                unoptimized
-                width={600}
-                height={300}
-                style={{ width: "100%", maxHeight: "300px", objectFit: "contain" }}
-              />
-            </Paper>
+            <>
+              <Paper
+                sx={{
+                  backgroundColor: "#333",
+                  color: "white",
+                  p: 2,
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  Model #2 (LSTM) Loss Curve
+                </Typography>
+                <Image
+                  src={`data:image/png;base64,${lstmResult.train_loss_curve}`}
+                  alt="LSTM Training Loss"
+                  unoptimized
+                  width={800}
+                  height={400}
+                  style={{ width: "100%", maxHeight: "400px", objectFit: "contain" }}
+                />
+              </Paper>
+
+              <Paper
+                sx={{
+                  backgroundColor: "#333",
+                  color: "white",
+                  p: 2,
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  Model #2 (LSTM) Performance on Test Data
+                </Typography>
+                <Image
+                  src={`data:image/png;base64,${lstmResult.test_predictions_plot}`}
+                  alt="LSTM Test Predictions"
+                  unoptimized
+                  width={800}
+                  height={400}
+                  style={{ width: "100%", maxHeight: "400px", objectFit: "contain" }}
+                />
+              </Paper>
+
+            </>
           )}
         </Grid>
 
         {/* Right Column: Metrics */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           {xgbResult && (
             <Paper
               sx={{
@@ -224,7 +231,6 @@ export default function AnalysisPage() {
                 color: "white",
                 p: 2,
                 mb: 2,
-                minHeight: 120,
               }}
             >
               <Typography variant="h6" sx={{ mb: 1 }}>
@@ -246,54 +252,29 @@ export default function AnalysisPage() {
           )}
 
           {lstmResult && (
-            <>
-              <Paper
-                sx={{
-                  backgroundColor: "#333",
-                  color: "white",
-                  p: 2,
-                  mb: 2,
-                  minHeight: 120,
-                }}
-              >
-                <Typography variant="h6" sx={{ mb: 1 }}>
-                  Model #2 (LSTM) Training Loss Curve
-                </Typography>
-                <Image
-                  src={`data:image/png;base64,${lstmResult.train_loss_curve}`}
-                  alt="LSTM Training Loss"
-                  unoptimized
-                  width={600}
-                  height={200}
-                  style={{ width: "100%", maxHeight: "200px", objectFit: "contain" }}
-                />
-              </Paper>
-
-              <Paper
-                sx={{
-                  backgroundColor: "#333",
-                  color: "white",
-                  p: 2,
-                  minHeight: 120,
-                }}
-              >
-                <Typography variant="h6" sx={{ mb: 1 }}>
-                  Model #2 (LSTM) Metrics
-                </Typography>
-                <Typography variant="body2">
-                  Train Loss: {lstmResult.train_loss.toFixed(3)}
-                </Typography>
-                <Typography variant="body2">
-                  Test Loss: {lstmResult.test_loss.toFixed(3)}
-                </Typography>
-                <Typography variant="body2">
-                  Train Accuracy: {lstmResult.train_accuracy.toFixed(3)}
-                </Typography>
-                <Typography variant="body2">
-                  Test Accuracy: {lstmResult.test_accuracy.toFixed(3)}
-                </Typography>
-              </Paper>
-            </>
+            <Paper
+              sx={{
+                backgroundColor: "#333",
+                color: "white",
+                p: 2,
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 1 }}>
+                Model #2 (LSTM) Metrics
+              </Typography>
+              <Typography variant="body2">
+                Train Loss: {lstmResult.train_loss.toFixed(3)}
+              </Typography>
+              <Typography variant="body2">
+                Test Loss: {lstmResult.test_loss.toFixed(3)}
+              </Typography>
+              <Typography variant="body2">
+                Train Accuracy: {lstmResult.train_accuracy.toFixed(3)}
+              </Typography>
+              <Typography variant="body2">
+                Test Accuracy: {lstmResult.test_accuracy.toFixed(3)}
+              </Typography>
+            </Paper>
           )}
         </Grid>
       </Grid>

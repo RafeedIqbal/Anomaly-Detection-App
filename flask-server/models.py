@@ -1,7 +1,6 @@
-# model.py
 import pandas as pd
 import xgboost as xgb
-from sklearn.metrics import root_mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import io
 import base64
@@ -9,6 +8,8 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from keras.api.models import Sequential
 from keras.api.layers import LSTM, Dense
+import matplotlib
+matplotlib.use('Agg')
 
 
 def XGB_MT1R1(df, target='Toronto'):
@@ -21,9 +22,10 @@ def XGB_MT1R1(df, target='Toronto'):
     train_df = df.iloc[:split_index].reset_index(drop=True)
     test_df = df.iloc[split_index:].reset_index(drop=True)
 
-    X_train = train_df.drop(columns=[target])
+    # Drop non-numeric columns from features (e.g., DateTime)
+    X_train = train_df.drop(columns=[target]).select_dtypes(include=['number'])
+    X_test = test_df.drop(columns=[target]).select_dtypes(include=['number'])
     y_train = train_df[target]
-    X_test = test_df.drop(columns=[target])
     y_test = test_df[target]
 
     # Train XGBoost model with evaluation results recorded
@@ -33,22 +35,27 @@ def XGB_MT1R1(df, target='Toronto'):
         eval_set=[(X_train, y_train), (X_test, y_test)],
         verbose=False,
     )
+    
+    # Retrieve evaluation results for loss curve plotting
+    evals_result = model.evals_result()
+    train_rmse_list = evals_result['validation_0']['rmse']
+    test_rmse_list = evals_result['validation_1']['rmse']
 
     # Get predictions
     y_train_pred = model.predict(X_train)
     y_test_pred = model.predict(X_test)
 
     # Compute metrics: RMSE and R² score
-    train_loss = root_mean_squared_error(y_train, y_train_pred, squared=False)
-    test_loss = root_mean_squared_error(y_test, y_test_pred, squared=False)
+    train_loss = np.sqrt(mean_squared_error(y_train, y_train_pred))
+    test_loss = np.sqrt(mean_squared_error(y_test, y_test_pred))
     train_accuracy = r2_score(y_train, y_train_pred)
     test_accuracy = r2_score(y_test, y_test_pred)
 
     # Generate loss curve plot (training and test RMSE over epochs)
     plt.figure()
-    epochs = range(1, len(evals_result["validation_0"]["rmse"]) + 1)
-    plt.plot(epochs, evals_result["validation_0"]["rmse"], label="Train Loss")
-    plt.plot(epochs, evals_result["validation_1"]["rmse"], label="Test Loss")
+    epochs = range(1, len(train_rmse_list) + 1)
+    plt.plot(epochs, train_rmse_list, label="Train Loss")
+    plt.plot(epochs, test_rmse_list, label="Test Loss")
     plt.xlabel("Epoch")
     plt.ylabel("RMSE")
     plt.title("Loss Curve")
@@ -99,6 +106,8 @@ def LSTM_FINAL(df, target='Toronto'):
     
     # Split data: 80% train, 20% test
     train_size = int(len(data_scaled) * 0.8)
+    if train_size < 2 or (len(data_scaled) - train_size) < 2:
+        raise ValueError("Not enough data available for a proper train/test split.")
     train_data = data_scaled[:train_size]
     test_data = data_scaled[train_size:]
     
@@ -112,6 +121,11 @@ def LSTM_FINAL(df, target='Toronto'):
     
     X_train, Y_train = create_dataset(train_data)
     X_test, Y_test = create_dataset(test_data)
+    
+    # Check if dataset creation produced enough samples
+    if X_train.shape[0] == 0 or X_test.shape[0] == 0:
+        raise ValueError("Not enough samples in training or testing set after dataset creation. "
+                         "Ensure your input dataframe has sufficient rows.")
     
     # Reshape input to be [samples, time_steps, features]
     X_train = np.reshape(X_train, (X_train.shape[0], 1, 1))
@@ -138,8 +152,8 @@ def LSTM_FINAL(df, target='Toronto'):
     Y_test_inv = scaler.inverse_transform(Y_test.reshape(-1, 1))
     
     # Calculate performance metrics (using RMSE and R² score)
-    train_rmse = np.sqrt(root_mean_squared_error(Y_train_inv, train_predict_inv))
-    test_rmse = np.sqrt(root_mean_squared_error(Y_test_inv, test_predict_inv))
+    train_rmse = np.sqrt(mean_squared_error(Y_train_inv, train_predict_inv))
+    test_rmse = np.sqrt(mean_squared_error(Y_test_inv, test_predict_inv))
     train_r2 = r2_score(Y_train_inv, train_predict_inv)
     test_r2 = r2_score(Y_test_inv, test_predict_inv)
     
