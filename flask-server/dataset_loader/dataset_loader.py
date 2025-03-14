@@ -1,10 +1,3 @@
-#######
-# Paste code below into your script to access our API/functions
-#######
-# import urllib.request
-# api_url = 'https://raw.githubusercontent.com/tanmayyb/ele70_bv03/refs/heads/main/api/datasets.py'
-# exec(urllib.request.urlopen(api_url).read())
-
 import pandas as pd
 
 # Dataloader for Energy Demand (IESO Zonal Ontario-wide)
