@@ -82,8 +82,8 @@ export default function AnalysisPage() {
     }
   };
 
-  const handleHome = () => {
-    router.push("/");
+  const handleNext = () => {
+    router.push("/dataset/anomaly");
   };
 
   const handleBack = () => {
@@ -99,35 +99,35 @@ export default function AnalysisPage() {
         p: 2,
       }}
     >
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        #4 Analysis Dashboard
-      </Typography>
-
-      {error && (
-        <Typography variant="body1" color="error" sx={{ mb: 2 }}>
-          {error}
+      {/* Centered Header and Run Models Button */}
+      <Box sx={{ textAlign: "center", mb: 4 }}>
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          #4 Analysis Dashboard
         </Typography>
-      )}
-      {loading && (
-        <Box display="flex" justifyContent="center" mb={2}>
-          <CircularProgress color="inherit" />
-        </Box>
-      )}
-
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleRunModels}
-        disabled={loading}
-        sx={{ mb: 4 }}
-      >
-        Run Models
-      </Button>
+        {error && (
+          <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+        {loading && (
+          <Box display="flex" justifyContent="center" mb={2}>
+            <CircularProgress color="inherit" />
+          </Box>
+        )}
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleRunModels}
+          disabled={loading}
+          sx={{ mb: 4, fontSize: "1.2rem", padding: "12px 24px" }}
+        >
+          Run Models
+        </Button>
+      </Box>
 
       <Grid container spacing={2} alignItems="stretch">
         {/* Left Column: All Graphs */}
         <Grid item xs={12} md={9}>
-
           {xgbResult && (
             <>
               <Paper
@@ -147,7 +147,11 @@ export default function AnalysisPage() {
                   unoptimized
                   width={800}
                   height={400}
-                  style={{ width: "100%", maxHeight: "400px", objectFit: "contain" }}
+                  style={{
+                    width: "100%",
+                    maxHeight: "400px",
+                    objectFit: "contain",
+                  }}
                 />
               </Paper>
 
@@ -168,7 +172,11 @@ export default function AnalysisPage() {
                   unoptimized
                   width={800}
                   height={400}
-                  style={{ width: "100%", maxHeight: "400px", objectFit: "contain" }}
+                  style={{
+                    width: "100%",
+                    maxHeight: "400px",
+                    objectFit: "contain",
+                  }}
                 />
               </Paper>
             </>
@@ -193,7 +201,11 @@ export default function AnalysisPage() {
                   unoptimized
                   width={800}
                   height={400}
-                  style={{ width: "100%", maxHeight: "400px", objectFit: "contain" }}
+                  style={{
+                    width: "100%",
+                    maxHeight: "400px",
+                    objectFit: "contain",
+                  }}
                 />
               </Paper>
 
@@ -214,10 +226,13 @@ export default function AnalysisPage() {
                   unoptimized
                   width={800}
                   height={400}
-                  style={{ width: "100%", maxHeight: "400px", objectFit: "contain" }}
+                  style={{
+                    width: "100%",
+                    maxHeight: "400px",
+                    objectFit: "contain",
+                  }}
                 />
               </Paper>
-
             </>
           )}
         </Grid>
@@ -279,13 +294,31 @@ export default function AnalysisPage() {
         </Grid>
       </Grid>
 
-      {/* Navigation Buttons */}
-      <Box display="flex" justifyContent="space-between" mt={4}>
-        <Button variant="outlined" color="inherit" onClick={handleHome}>
-          HOME
-        </Button>
-        <Button variant="outlined" color="inherit" onClick={handleBack}>
+      {/* Centered and Larger Navigation Buttons */}
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        mt={4}
+        gap={2}
+      >
+        <Button
+          variant="outlined"
+          color="inherit"
+          onClick={handleBack}
+          size="large"
+          sx={{ fontSize: "1.2rem", padding: "12px 24px" }}
+        >
           BACK
+        </Button>
+        <Button
+          variant="outlined"
+          color="inherit"
+          onClick={handleNext}
+          size="large"
+          sx={{ fontSize: "1.2rem", padding: "12px 24px" }}
+        >
+          NEXT
         </Button>
       </Box>
     </Box>
