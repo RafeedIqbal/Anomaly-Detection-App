@@ -7,8 +7,8 @@ import io
 import base64
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
-from keras.layers import LSTM, Dense
+from keras.api.models import Sequential
+from keras.api.layers import LSTM, Dense
 
 
 def XGB_MT1R1(df, target='Toronto'):
@@ -88,7 +88,7 @@ def XGB_MT1R1(df, target='Toronto'):
     return result
 
 
-def train_and_evaluate_lstm(df, target='Toronto'):
+def LSTM_FINAL(df, target='Toronto'):
     # Check that the target column exists
     if target not in df.columns:
         raise ValueError(f"Target column '{target}' not found in the data")
@@ -141,8 +141,8 @@ def train_and_evaluate_lstm(df, target='Toronto'):
     Y_test_inv = scaler.inverse_transform(Y_test.reshape(-1, 1))
     
     # Calculate performance metrics (using RMSE and R² score)
-    train_rmse = np.sqrt(mean_squared_error(Y_train_inv, train_predict_inv))
-    test_rmse = np.sqrt(mean_squared_error(Y_test_inv, test_predict_inv))
+    train_rmse = np.sqrt(root_mean_squared_error(Y_train_inv, train_predict_inv))
+    test_rmse = np.sqrt(root_mean_squared_error(Y_test_inv, test_predict_inv))
     train_r2 = r2_score(Y_train_inv, train_predict_inv)
     test_r2 = r2_score(Y_test_inv, test_predict_inv)
     

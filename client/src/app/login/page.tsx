@@ -22,6 +22,7 @@ const Login: React.FC = () => {
       // Save the token (using localStorage here; adjust as needed)
       localStorage.setItem("access_token", access_token);
       console.log("Login successful!");
+      router.push("/dataset")
       // Optionally, navigate to a protected page after successful login
       // router.push("/profile");
     } catch (err) {
