@@ -84,46 +84,107 @@ def lstm_train_route():
 # New route to generate a CSV for modeling
 @app.route('/generate_csv', methods=['POST'])
 def generate_csv():
-    # Parse input parameters (either as JSON or form-data)
+    # Parse input parameters from JSON or form-data
     data = request.get_json() if request.is_json else request.form
-    # Energy repository: default "IESO"
-    energy_repo = data.get('energy_repo', 'IESO').upper()
-    # Predictor repository: default "climate"
+
+    # Validate and get dataset type (should be either "Zonal" or "FSA")
+    dataset_type = data.get('dataset_type')
+    if not dataset_type or dataset_type.lower() not in ['zonal', 'fsa']:
+        return jsonify({"error": "dataset_type must be provided and be either 'Zonal' or 'FSA'."}), 400
+    dataset_type = dataset_type.lower()
+
+    # Get predictor repository (default: climate)
     predictor_repo = data.get('predictor_repo', 'climate').lower()
-    # Target zone: default "Toronto"
-    target_zone = data.get('target_zone', 'Toronto')
-    # Timeframe: first and last years (default 2010 and 2020)
-    try:
-        first_year = int(data.get('first_year', 2010))
-        last_year = int(data.get('last_year', 2020))
-    except ValueError:
-        return jsonify({"error": "Invalid timeframe provided."}), 400
 
-    # Load the energy dataset (currently only IESO is supported)
-    if energy_repo == 'IESO':
-        energy_df = load_ieso_dataset(first_year, last_year, join=True)
-    else:
-        return jsonify({"error": f"Energy repository '{energy_repo}' is not supported."}), 400
+    # Prepare variables to hold the predictor dataset's year range
+    if dataset_type == 'zonal':
+        # For zonal datasets, require target_zone, start_year, and end_year.
+        target_zone = data.get('target_zone', 'Toronto')
+        try:
+            start_year = int(data.get('start_year'))
+            end_year = int(data.get('end_year'))
+        except (TypeError, ValueError):
+            return jsonify({"error": "For zonal dataset, start_year and end_year must be provided as integers."}), 400
 
-    # Load the predictor dataset (currently only climate data is supported)
+        # Create a zonal IESODataset instance for Ontario
+        ds = IESODataset('zonal', region="ON")
+        target_options = ds.get_target_options()  # e.g., ['Northwest', 'Northeast', 'Ottawa', 'East', 'Toronto', ...]
+        try:
+            target_idx = next(i for i, option in enumerate(target_options) if option.lower() == target_zone.lower())
+        except StopIteration:
+            return jsonify({"error": f"Target zone '{target_zone}' not found. Available options: {target_options}."}), 400
+
+        # Load the zonal energy dataset using years as the date range
+        try:
+            energy_df = ds.load_dataset(start_date=start_year, end_date=end_year, target_idx=target_idx, download=True)
+        except Exception as e:
+            return jsonify({"error": f"Error loading zonal dataset: {str(e)}"}), 500
+
+        # Use the same year range for the climate dataset
+        climate_start_year = start_year
+        climate_end_year = end_year
+
+    elif dataset_type == 'fsa':
+        # For FSA datasets, require target_city, start_year, start_month, end_year, and end_month.
+        target_city = data.get('target_city')
+        if not target_city:
+            return jsonify({"error": "For FSA dataset, target_city must be provided."}), 400
+        try:
+            start_year = int(data.get('start_year'))
+            start_month = int(data.get('start_month'))
+            end_year = int(data.get('end_year'))
+            end_month = int(data.get('end_month'))
+        except (TypeError, ValueError):
+            return jsonify({"error": "For FSA dataset, start_year, start_month, end_year, and end_month must be provided as integers."}), 400
+
+        # Combine year and month into a YYYYMM integer for the dataset loader
+        start_date = int(f"{start_year}{start_month:02d}")
+        end_date = int(f"{end_year}{end_month:02d}")
+
+        ds = IESODataset('fsa', region="ON")
+        # Override the default target options with the list from message.txt
+        try:
+            import ast
+            with open('message.txt', 'r') as f:
+                cities = ast.literal_eval(f.read())
+            ds.target_options = cities
+        except Exception as e:
+            return jsonify({"error": f"Error loading target cities from message.txt: {str(e)}"}), 500
+
+        try:
+            target_idx = next(i for i, city in enumerate(ds.target_options) if city.lower() == target_city.lower())
+        except StopIteration:
+            return jsonify({"error": f"Target city '{target_city}' not found. Available options: {ds.target_options}."}), 400
+
+        # Load the FSA energy dataset using YYYYMM as the date range
+        try:
+            energy_df = ds.load_dataset(start_date=start_date, end_date=end_date, target_idx=target_idx, download=True)
+        except Exception as e:
+            return jsonify({"error": f"Error loading FSA dataset: {str(e)}"}), 500
+
+        # For the predictor dataset, use the provided year range (ignoring month details)
+        climate_start_year = start_year
+        climate_end_year = end_year
+
+    # Load the predictor (climate) dataset
     if predictor_repo in ['climate', 'weather']:
-        predictor_df = load_climate_dataset(first_year, last_year, join=True)
+        try:
+            predictor_df = load_climate_dataset(climate_start_year, climate_end_year, join=True)
+        except Exception as e:
+            return jsonify({"error": f"Error loading climate dataset: {str(e)}"}), 500
     else:
         return jsonify({"error": f"Predictor repository '{predictor_repo}' is not supported."}), 400
 
-    # Merge the datasets on the "DateTime" column
-    merged_df = pd.merge(energy_df, predictor_df, on="DateTime")
+    # Merge the energy and predictor datasets on the "DateTime" column
+    try:
+        merged_df = pd.merge(energy_df, predictor_df, on="DateTime")
+    except Exception as e:
+        return jsonify({"error": f"Error merging datasets: {str(e)}"}), 500
 
-    # Check if the target zone exists in the merged dataset
-    if target_zone not in merged_df.columns:
-        return jsonify({"error": f"Target zone '{target_zone}' not found in the energy dataset."}), 400
-
-    # (Optionally) select only relevant columns:
-    # For instance, you might want DateTime, the target zone column, and all predictor columns.
-    # Here we return the full merged dataframe.
+    # Convert the merged DataFrame to CSV
     csv_data = merged_df.to_csv(index=False)
 
-    # Return CSV as a downloadable file
+    # Return the CSV as a downloadable file
     return Response(
         csv_data,
         mimetype="text/csv",
