@@ -42,41 +42,51 @@ export default function AnalysisPage() {
   const router = useRouter();
   const targetColumn = "Toronto";
 
-  const handleRunModels = async () => {
+  // Handler for running only the XGBoost model
+  const handleRunXGB = async () => {
     if (!csvData) {
       setError("No CSV data found in context.");
       return;
     }
     setError("");
     setLoading(true);
-
     try {
-      // Create a Blob from CSV data for FormData
       const blob = new Blob([csvData], { type: "text/csv" });
-
-      const formDataXGB = new FormData();
-      formDataXGB.append("file", blob, "merged_data.csv");
-      formDataXGB.append("target", targetColumn);
-
-      const formDataLSTM = new FormData();
-      formDataLSTM.append("file", blob, "merged_data.csv");
-      formDataLSTM.append("target", targetColumn);
-
-      // Run both APIs in parallel
-      const [xgbResp, lstmResp] = await Promise.all([
-        axios.post("http://localhost:5000/xgb", formDataXGB, {
-          headers: { "Content-Type": "multipart/form-data" },
-        }),
-        axios.post("http://localhost:5000/lstm", formDataLSTM, {
-          headers: { "Content-Type": "multipart/form-data" },
-        }),
-      ]);
-
-      setXgbResult(xgbResp.data);
-      setLstmResult(lstmResp.data);
+      const formData = new FormData();
+      formData.append("file", blob, "merged_data.csv");
+      formData.append("target", targetColumn);
+      const response = await axios.post("http://localhost:5000/xgb", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setXgbResult(response.data);
     } catch (err) {
       console.error(err);
-      setError("Error running models. Check console or server logs.");
+      setError("Error running XGBoost model. Check console or server logs.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler for running only the LSTM model
+  const handleRunLSTM = async () => {
+    if (!csvData) {
+      setError("No CSV data found in context.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const blob = new Blob([csvData], { type: "text/csv" });
+      const formData = new FormData();
+      formData.append("file", blob, "merged_data.csv");
+      formData.append("target", targetColumn);
+      const response = await axios.post("http://localhost:5000/lstm", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setLstmResult(response.data);
+    } catch (err) {
+      console.error(err);
+      setError("Error running LSTM model. Check console or server logs.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +109,7 @@ export default function AnalysisPage() {
         p: 2,
       }}
     >
-      {/* Centered Header and Run Models Button */}
+      {/* Centered Header and Separate Run Buttons */}
       <Box sx={{ textAlign: "center", mb: 4 }}>
         <Typography variant="h5" sx={{ mb: 2 }}>
           #4 Analysis Dashboard
@@ -114,19 +124,37 @@ export default function AnalysisPage() {
             <CircularProgress color="inherit" />
           </Box>
         )}
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleRunModels}
-          disabled={loading}
-          sx={{ mb: 4, fontSize: "1.2rem", padding: "12px 24px" }}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 2,
+            mb: 4,
+          }}
         >
-          Run Models
-        </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleRunXGB}
+            disabled={loading}
+            sx={{ fontSize: "1.2rem", padding: "12px 24px" }}
+          >
+            Run XGBoost
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleRunLSTM}
+            disabled={loading}
+            sx={{ fontSize: "1.2rem", padding: "12px 24px" }}
+          >
+            Run LSTM
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={2} alignItems="stretch">
-        {/* Left Column: All Graphs */}
+        {/* Left Column: Graphs */}
         <Grid item xs={12} md={9}>
           {xgbResult && (
             <>
@@ -294,7 +322,7 @@ export default function AnalysisPage() {
         </Grid>
       </Grid>
 
-      {/* Centered and Larger Navigation Buttons */}
+      {/* Navigation Buttons */}
       <Box
         display="flex"
         justifyContent="center"
