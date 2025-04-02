@@ -28,7 +28,7 @@ npm run dev
 ## 🧠 Backend
 
 ### Requirements
-- Python (recommended: 3.12+)
+- Python (recommended: 3.12, not supported: 3.13)
 - Virtual environment (optional but recommended)
 
 ### Installation
