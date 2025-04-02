@@ -33,9 +33,9 @@ const DatasetUploadPage: React.FC = () => {
     reader.onload = (e) => {
       const text = e.target?.result;
       if (typeof text === "string") {
-        // Store CSV data in context
-        setCsvData(text);
-        // Navigate to next page where CSV data can be used (adjust the route as needed)
+        // Store CSV data in context as an object with key "original"
+        setCsvData({ original: text });
+        // Navigate to the analysis page
         router.push("/dataset/analysis");
       } else {
         setUploadError("Error reading file.");
@@ -52,13 +52,13 @@ const DatasetUploadPage: React.FC = () => {
     <Container maxWidth="sm">
       <Box
         sx={{
-            minHeight: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
-            backgroundColor: "black", // Set the background to black
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 4,
+          backgroundColor: "black",
         }}
       >
         <Paper elevation={4} sx={{ padding: 4, width: "100%" }}>

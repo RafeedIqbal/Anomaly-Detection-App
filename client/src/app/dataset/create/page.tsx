@@ -34,7 +34,6 @@ const zonalOptions = [
 ];
 
 // Options for FSA dataset (loaded from message.txt)
-// NOTE: This list is taken from message.txt.
 const fsaOptions = [
   "Toronto", "Ottawa", "Hamilton", "Mississauga", "Brampton", "Kitchener", "London", "Markham", "Oshawa", "Vaughan",
   "Windsor", "St. Catharines", "Oakville", "Richmond Hill", "Burlington", "Sudbury", "Barrie", "Guelph", "Whitby",
@@ -109,7 +108,9 @@ const CreateDatasetPage: React.FC = () => {
   const [success, setSuccess] = useState<string>("");
 
   // When datasetType changes, reset the target field to the first available option.
-  const handleDatasetTypeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+  const handleDatasetTypeChange = (
+    event: React.ChangeEvent<{ value: unknown }>
+  ) => {
     const newType = event.target.value as string;
     setDatasetType(newType);
     if (newType === "FSA") {
@@ -156,7 +157,8 @@ const CreateDatasetPage: React.FC = () => {
         postData,
         { responseType: "text" } // Expect CSV text
       );
-      setCsvData(response.data);
+      // Save the generated CSV in context under "original"
+      setCsvData({ original: response.data });
       setSuccess("CSV generated and stored successfully.");
     } catch (err: unknown) {
       console.error(err);
@@ -317,7 +319,11 @@ const CreateDatasetPage: React.FC = () => {
               fullWidth
               sx={{ mt: 2 }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : "Generate CSV"}
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Generate CSV"
+              )}
             </Button>
           </Box>
           {success && (

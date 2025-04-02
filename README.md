@@ -1,12 +1,12 @@
 # Anomaly Detection App
  
 
-frontend
+# frontend
 cd client   
 npm run dev
 
 
-backend
-venv/Scripts/activate
+# backend
+source [venv folder name]/Scripts/activate
 cd flask-server
 flask run

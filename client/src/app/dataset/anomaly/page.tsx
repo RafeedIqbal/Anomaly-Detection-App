@@ -1,32 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  Typography,
-} from "@mui/material";
+import React, { useState, useContext } from "react";
+import { Box, Button, Card, CardContent, Grid, Typography } from "@mui/material";
+import { CsvContext } from "@/context/CsvContext";
 
 export default function AnomalyDetectionPage() {
-  const [file, setFile] = useState<File | null>(null);
+  const { csvData } = useContext(CsvContext);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string>("");
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    }
-  };
-
+  // Handler to run anomaly detection using the CSV saved in context
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (!csvData || (!csvData.xgb && !csvData.lstm)) {
+      setError("No CSV data found. Please run the analysis first.");
+      return;
+    }
 
+    // Prefer xgb CSV; if not available, use lstm CSV
+    const csvString = csvData.xgb ? csvData.xgb : csvData.lstm;
+    const blob = new Blob([csvString], { type: "text/csv" });
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", blob, "anomaly_data.csv");
     formData.append("target", "Toronto");
 
     try {
@@ -63,29 +58,10 @@ export default function AnomalyDetectionPage() {
           }}
         >
           <Button
-            variant="outlined"
-            component="label"
-            color="primary"
-            sx={{ textTransform: "none" }}
-          >
-            📁 Upload CSV
-            <input
-              type="file"
-              accept=".csv"
-              hidden
-              onChange={handleFileChange}
-            />
-          </Button>
-
-          <Typography variant="body2" sx={{ minWidth: 200 }}>
-            {file ? `Selected: ${file.name}` : "No file selected"}
-          </Typography>
-
-          <Button
             type="submit"
             variant="contained"
             color="primary"
-            disabled={!file}
+            disabled={!csvData || (!csvData.xgb && !csvData.lstm)}
           >
             🚀 Run Detection
           </Button>
@@ -133,11 +109,7 @@ export default function AnomalyDetectionPage() {
                   <Grid item xs={12} md={6} key={plot.key}>
                     <Card elevation={3}>
                       <CardContent>
-                        <Typography
-                          variant="subtitle1"
-                          gutterBottom
-                          sx={{ fontWeight: 600 }}
-                        >
+                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
                           {plot.label}
                         </Typography>
                         <Box

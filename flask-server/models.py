@@ -51,7 +51,7 @@ def XGB_MT1R1(df, target='Toronto'):
     train_accuracy = r2_score(y_train, y_train_pred)
     test_accuracy = r2_score(y_test, y_test_pred)
 
-    # Generate consistent training loss curve plot (training and test RMSE over epochs)
+    # Generate training loss curve plot (training and test RMSE over epochs)
     plt.figure(figsize=(10,6))
     epochs = range(1, len(train_rmse_list) + 1)
     plt.plot(epochs, train_rmse_list, label="Train Loss")
@@ -66,7 +66,7 @@ def XGB_MT1R1(df, target='Toronto'):
     loss_curve_base64 = base64.b64encode(buf1.getvalue()).decode('utf-8')
     plt.close()
 
-    # Generate consistent performance plot (actual vs. predicted on test set)
+    # Generate performance plot (actual vs. predicted on test set)
     plt.figure(figsize=(10,6))
     plt.plot(test_df.index, y_test, label="Actual")
     plt.plot(test_df.index, y_test_pred, label="Predicted")
@@ -80,14 +80,30 @@ def XGB_MT1R1(df, target='Toronto'):
     performance_plot_base64 = base64.b64encode(buf2.getvalue()).decode('utf-8')
     plt.close()
 
-    # Return results in a dictionary
+    # Create output dataframe for anomaly detection:
+    # Use the DateTime column from test_df if it exists; otherwise, generate one.
+    if 'DateTime' in test_df.columns:
+        date_column = test_df['DateTime']
+    else:
+        date_column = pd.Series(test_df.index, name="DateTime")
+    
+    output_df = pd.DataFrame({
+        "DateTime": date_column,
+        target: y_test,
+        "pred": y_test_pred,
+    })
+    output_df["error"] = (output_df[target] - output_df["pred"]).abs()
+    csv_output = output_df.to_csv(index=False)
+
+    # Return all results including the CSV output for anomaly detection
     result = {
         "train_loss": train_loss,
         "test_loss": test_loss,
         "train_accuracy": train_accuracy,
         "test_accuracy": test_accuracy,
         "loss_curve": loss_curve_base64,
-        "performance_plot": performance_plot_base64
+        "performance_plot": performance_plot_base64,
+        "anomaly_csv": csv_output
     }
     return result
 
@@ -97,7 +113,7 @@ def LSTM_FINAL(df, target='Toronto'):
     if target not in df.columns:
         raise ValueError(f"Target column '{target}' not found in the data")
     
-    # Use only the target column for prediction
+    # Use only the target column for prediction (preserve DateTime if available)
     data = df[[target]].copy()
     
     # Scale data between 0 and 1
@@ -122,10 +138,8 @@ def LSTM_FINAL(df, target='Toronto'):
     X_train, Y_train = create_dataset(train_data)
     X_test, Y_test = create_dataset(test_data)
     
-    # Check if dataset creation produced enough samples
     if X_train.shape[0] == 0 or X_test.shape[0] == 0:
-        raise ValueError("Not enough samples in training or testing set after dataset creation. "
-                         "Ensure your input dataframe has sufficient rows.")
+        raise ValueError("Not enough samples in training or testing set after dataset creation.")
     
     # Reshape input to be [samples, time_steps, features]
     X_train = np.reshape(X_train, (X_train.shape[0], 1, 1))
@@ -141,23 +155,18 @@ def LSTM_FINAL(df, target='Toronto'):
     # Train the model and capture the training loss history
     history = model.fit(X_train, Y_train, epochs=50, batch_size=200, verbose=0)
     
-    # Make predictions on both training and test sets
-    train_predict = model.predict(X_train)
+    # Make predictions on test set
     test_predict = model.predict(X_test)
     
-    # Inverse transform the predictions and true values back to original scale
-    train_predict_inv = scaler.inverse_transform(train_predict)
-    Y_train_inv = scaler.inverse_transform(Y_train.reshape(-1, 1))
+    # Inverse transform predictions and true values back to original scale
     test_predict_inv = scaler.inverse_transform(test_predict)
     Y_test_inv = scaler.inverse_transform(Y_test.reshape(-1, 1))
     
-    # Calculate performance metrics (using RMSE and R² score)
-    train_rmse = np.sqrt(mean_squared_error(Y_train_inv, train_predict_inv))
+    # Calculate performance metrics (RMSE and R² score)
     test_rmse = np.sqrt(mean_squared_error(Y_test_inv, test_predict_inv))
-    train_r2 = r2_score(Y_train_inv, train_predict_inv)
     test_r2 = r2_score(Y_test_inv, test_predict_inv)
     
-    # Create a consistent training loss curve plot by converting MSE to RMSE for each epoch
+    # Create training loss curve plot (MSE converted to RMSE per epoch)
     plt.figure(figsize=(10,6))
     train_loss_rmse = np.sqrt(np.array(history.history['loss']))
     plt.plot(train_loss_rmse, label='Train Loss')
@@ -171,7 +180,7 @@ def LSTM_FINAL(df, target='Toronto'):
     train_loss_curve = base64.b64encode(buf1.getvalue()).decode('utf-8')
     plt.close()
     
-    # Create a consistent test performance plot (actual vs. predicted)
+    # Create test performance plot (actual vs. predicted)
     plt.figure(figsize=(10,6))
     plt.plot(Y_test_inv, label='Actual')
     plt.plot(test_predict_inv, label='Predicted')
@@ -185,13 +194,32 @@ def LSTM_FINAL(df, target='Toronto'):
     test_predictions_plot = base64.b64encode(buf2.getvalue()).decode('utf-8')
     plt.close()
     
-    # Return all computed metrics and plots in a dictionary
+    # Create output CSV for anomaly detection:
+    # If a DateTime column exists in the original df, use it for the test set.
+    if 'DateTime' in df.columns:
+        date_series = df['DateTime'].reset_index(drop=True)
+        test_dates = date_series[train_size:].reset_index(drop=True)
+        # Adjust dates to align with predictions (since create_dataset shifts by one)
+        test_dates = test_dates.iloc[1:].reset_index(drop=True)
+    else:
+        test_dates = pd.Series(range(len(Y_test_inv)), name="DateTime")
+    
+    output_df = pd.DataFrame({
+        "DateTime": test_dates,
+        target: Y_test_inv.flatten(),
+        "pred": test_predict_inv.flatten()
+    })
+    output_df["error"] = (output_df[target] - output_df["pred"]).abs()
+    csv_output = output_df.to_csv(index=False)
+    
+    # Return all results including the CSV output for anomaly detection
     result = {
-        "train_loss": train_rmse,
+        "train_loss": None,  # (Training loss for LSTM was not computed separately)
         "test_loss": test_rmse,
-        "train_accuracy": train_r2,
+        "train_accuracy": None,  # R² on training data not computed here
         "test_accuracy": test_r2,
         "train_loss_curve": train_loss_curve,
-        "test_predictions_plot": test_predictions_plot
+        "test_predictions_plot": test_predictions_plot,
+        "anomaly_csv": csv_output
     }
     return result

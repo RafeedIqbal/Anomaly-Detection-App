@@ -21,19 +21,21 @@ interface XgbResult {
   test_accuracy: number;
   loss_curve: string;         // base64-encoded image
   performance_plot: string;   // base64-encoded image
+  anomaly_csv: string;        // CSV string for anomaly detection
 }
 
 interface LstmResult {
-  train_loss: number;
+  train_loss: number | null;
   test_loss: number;
-  train_accuracy: number;
+  train_accuracy: number | null;
   test_accuracy: number;
   train_loss_curve: string;       // base64-encoded image
   test_predictions_plot: string;  // base64-encoded image
+  anomaly_csv: string;            // CSV string for anomaly detection
 }
 
 export default function AnalysisPage() {
-  const { csvData } = useContext(CsvContext);
+  const { csvData, setCsvData } = useContext(CsvContext);
   const [xgbResult, setXgbResult] = useState<XgbResult | null>(null);
   const [lstmResult, setLstmResult] = useState<LstmResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,14 +46,15 @@ export default function AnalysisPage() {
 
   // Handler for running only the XGBoost model
   const handleRunXGB = async () => {
-    if (!csvData) {
+    if (!csvData || !csvData.original) {
       setError("No CSV data found in context.");
       return;
     }
     setError("");
     setLoading(true);
     try {
-      const blob = new Blob([csvData], { type: "text/csv" });
+      // Use the CSV stored under the "original" key
+      const blob = new Blob([csvData.original], { type: "text/csv" });
       const formData = new FormData();
       formData.append("file", blob, "merged_data.csv");
       formData.append("target", targetColumn);
@@ -59,6 +62,8 @@ export default function AnalysisPage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setXgbResult(response.data);
+      // Merge in the anomaly CSV from XGB into the context
+      setCsvData((prev) => ({ ...prev, xgb: response.data.anomaly_csv }));
     } catch (err) {
       console.error(err);
       setError("Error running XGBoost model. Check console or server logs.");
@@ -69,14 +74,14 @@ export default function AnalysisPage() {
 
   // Handler for running only the LSTM model
   const handleRunLSTM = async () => {
-    if (!csvData) {
+    if (!csvData || !csvData.original) {
       setError("No CSV data found in context.");
       return;
     }
     setError("");
     setLoading(true);
     try {
-      const blob = new Blob([csvData], { type: "text/csv" });
+      const blob = new Blob([csvData.original], { type: "text/csv" });
       const formData = new FormData();
       formData.append("file", blob, "merged_data.csv");
       formData.append("target", targetColumn);
@@ -84,6 +89,8 @@ export default function AnalysisPage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setLstmResult(response.data);
+      // Merge in the anomaly CSV from LSTM into the context
+      setCsvData((prev) => ({ ...prev, lstm: response.data.anomaly_csv }));
     } catch (err) {
       console.error(err);
       setError("Error running LSTM model. Check console or server logs.");
@@ -306,16 +313,28 @@ export default function AnalysisPage() {
                 Model #2 (LSTM) Metrics
               </Typography>
               <Typography variant="body2">
-                Train Loss: {lstmResult.train_loss.toFixed(3)}
+                Train Loss:{" "}
+                {lstmResult.train_loss !== null
+                  ? lstmResult.train_loss.toFixed(3)
+                  : "N/A"}
               </Typography>
               <Typography variant="body2">
-                Test Loss: {lstmResult.test_loss.toFixed(3)}
+                Test Loss:{" "}
+                {lstmResult.test_loss !== null
+                  ? lstmResult.test_loss.toFixed(3)
+                  : "N/A"}
               </Typography>
               <Typography variant="body2">
-                Train Accuracy: {lstmResult.train_accuracy.toFixed(3)}
+                Train Accuracy:{" "}
+                {lstmResult.train_accuracy !== null
+                  ? lstmResult.train_accuracy.toFixed(3)
+                  : "N/A"}
               </Typography>
               <Typography variant="body2">
-                Test Accuracy: {lstmResult.test_accuracy.toFixed(3)}
+                Test Accuracy:{" "}
+                {lstmResult.test_accuracy !== null
+                  ? lstmResult.test_accuracy.toFixed(3)
+                  : "N/A"}
               </Typography>
             </Paper>
           )}
