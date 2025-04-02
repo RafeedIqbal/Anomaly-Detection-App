@@ -13,6 +13,7 @@ The **Anomaly Detection App** is a powerful AI-driven tool designed to predict e
 
 ### Installation
 ```bash
+cd client
 npm install
 ```
 
