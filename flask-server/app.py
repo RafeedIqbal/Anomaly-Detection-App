@@ -10,7 +10,6 @@ import datetime
 import pandas as pd
 import io, base64
 import matplotlib.pyplot as plt
-import os
 
 # Import the anomaly detection module
 from anomaly_detection import AnomalyDetection
@@ -53,24 +52,9 @@ def profile():
 def train_route():
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
-    file = request.files['file']
 
     try:
-        # df = pd.read_csv(file, low_memory=False)
-        filename = 'dataset.csv'
-        if not os.path.exists(filename):
-            return jsonify({"error": "Dataset file not found"}), 400
-        # df = pd.read_csv(filename, low_memory
-    except Exception as e:
-        return jsonify({"error": f"Failed to read CSV file: {str(e)}"}), 400
-
-    target = request.form.get('target', 'Toronto')
-
-    try:
-        # result = XGB_MT1R1(df, target)
-        result = XGBOOST_FINAL(filename)
-        
-
+        result = XGBOOST_FINAL(file=request.files['file'])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
