@@ -1,7 +1,3 @@
-Sure! Here's a cleaner and more professional version of your README with an added "About" section:
-
----
-
 # ⚡ Anomaly Detection App
 
 ## About
