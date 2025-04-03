@@ -1,0 +1,28 @@
+ipykernel
+ipywidgets
+plotly
+nbformat
+matplotlib
+pandas
+tqdm
+xgboost
+scikit-learn
+seaborn
+beautifulsoup4
+# urllib
+# zipfile
+
+# custom libraries
+customtkinter
+
+# external libraries
+meteostat 
+geopy
+geopandas
+
+# flask
+# flask_jwt_extended
+# flask-cors
+# keras
+# tensorflow
+# prettytable
