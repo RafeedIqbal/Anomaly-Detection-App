@@ -2,8 +2,7 @@ from flask import Flask, jsonify, request, Response
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from flask_cors import CORS  # Enable CORS for cross-origin requests
 from auth import authenticate_user, register_user
-# from models import XGB_MT1R1, LSTM_FINAL  # Import the model training functions
-from models import XGBOOST_FINAL, LSTM_FINAL  # Import the model training functions
+from models import load_dataset_from_file, train_xgboost, LSTM_FINAL  # Import the model training functions
 
 from dataset_loader import load_ieso_dataset, load_climate_dataset, IESODataset  # Import data loaders
 import datetime
@@ -67,12 +66,15 @@ def profile():
 
 # Route for training XGBoost model
 @app.route('/xgb', methods=['POST'])
-def train_route():
+def xgboost_train_route():
+    # this route needs to be modified to handle dataset creation
+    # only this that should pass as inputs are the target name, dataset, and dt
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
     try:
-        result = XGBOOST_FINAL(file=request.files['file'])
+        target_name, dataset, dt = load_dataset_from_file(request.files['file'])
+        result = train_xgboost(target_name, dataset, dt)
     except Exception as e:
         app.logger.error(f"Error training XGBoost model: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
