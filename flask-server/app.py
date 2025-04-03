@@ -14,8 +14,26 @@ import matplotlib.pyplot as plt
 # Import the anomaly detection module
 from anomaly_detection import AnomalyDetection
 
+import logging
+import sys
+import os
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+
+os.makedirs('logs', exist_ok=True)
+logging.basicConfig(
+    filename='logs/error.log',
+    level=logging.ERROR,
+    format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.ERROR)
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+
 
 app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Replace with a secure key in production
 jwt = JWTManager(app)
@@ -56,6 +74,7 @@ def train_route():
     try:
         result = XGBOOST_FINAL(file=request.files['file'])
     except Exception as e:
+        app.logger.error(f"Error training XGBoost model: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
     return jsonify(result)
