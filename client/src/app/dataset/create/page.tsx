@@ -110,7 +110,7 @@ const CreateDatasetPage: React.FC = () => {
         { responseType: "text" } // Expect CSV text
       );
       // Save the generated CSV in context under "original"
-      setCsvData({ original: response.data });
+      setCsvData({ original: response.data, target });
       setSuccess("CSV generated and stored successfully.");
     } catch (err: unknown) {
       console.error(err);

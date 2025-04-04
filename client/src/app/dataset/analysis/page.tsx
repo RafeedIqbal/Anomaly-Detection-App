@@ -42,7 +42,8 @@ export default function AnalysisPage() {
   const [error, setError] = useState("");
 
   const router = useRouter();
-  const targetColumn = "Toronto";
+  // Use the target stored in context if available; otherwise, default to "Toronto"
+  const targetColumn = csvData && (csvData as any).target ? (csvData as any).target : "Toronto";
 
   // Handler for running only the XGBoost model
   const handleRunXGB = async () => {
@@ -342,13 +343,7 @@ export default function AnalysisPage() {
       </Grid>
 
       {/* Navigation Buttons */}
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        mt={4}
-        gap={2}
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" mt={4} gap={2}>
         <Button
           variant="outlined"
           color="inherit"

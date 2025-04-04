@@ -12,7 +12,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-def XGB_MT1R1(df, target='Toronto'):
+def XGB_MT1R1(df, target):
     # Ensure target column exists
     if target not in df.columns:
         raise ValueError(f"Target column '{target}' not found in CSV file")
@@ -109,7 +109,7 @@ def XGB_MT1R1(df, target='Toronto'):
     return result
 
 
-def LSTM_FINAL(df, target='Toronto', look_back=6):
+def LSTM_FINAL(df, target, look_back=6):
     # Check that the target column exists
     if target not in df.columns:
         raise ValueError(f"Target column '{target}' not found in the data")

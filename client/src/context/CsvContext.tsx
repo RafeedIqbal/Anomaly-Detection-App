@@ -5,6 +5,7 @@ import React, { createContext, useState, ReactNode } from "react";
 // Define the CSV data structure
 export interface CsvData {
   original: string;
+  target: string;
   xgb?: string;
   lstm?: string;
 }
