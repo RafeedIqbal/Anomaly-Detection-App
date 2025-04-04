@@ -2,17 +2,13 @@
 
 import React, { useState, useContext } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Box,
-  Button,
-  Grid,
-  Typography,
-  Paper,
-  CircularProgress,
-} from "@mui/material";
+import { Box, Button, Grid, Typography, Paper, CircularProgress } from "@mui/material";
 import axios from "axios";
-import Image from "next/image";
+import dynamic from "next/dynamic";
 import { CsvContext } from "@/context/CsvContext";
+
+// Dynamically import Plotly to prevent SSR errors
+const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
 interface XgbResult {
   train_loss: number;
@@ -176,17 +172,32 @@ export default function AnalysisPage() {
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Model #1 (XGB) Loss Curve
                 </Typography>
-                <Image
-                  src={`data:image/png;base64,${xgbResult.loss_curve}`}
-                  alt="XGB Loss Curve"
-                  unoptimized
-                  width={800}
-                  height={400}
-                  style={{
-                    width: "100%",
-                    maxHeight: "400px",
-                    objectFit: "contain",
+                <Plot
+                  data={[]}
+                  layout={{
+                    images: [
+                      {
+                        source: `data:image/png;base64,${xgbResult.loss_curve}`,
+                        xref: "paper",
+                        yref: "paper",
+                        x: 0,
+                        y: 1,
+                        sizex: 1,
+                        sizey: 1,
+                        opacity: 1,
+                        layer: "below",
+                      },
+                    ],
+                    xaxis: { visible: false },
+                    yaxis: { visible: false },
+                    margin: { l: 0, r: 0, t: 0, b: 0 },
+                    width: 800,
+                    height: 400,
+                    paper_bgcolor: "black",
+                    plot_bgcolor: "black",
                   }}
+                  config={{ displayModeBar: false }}
+                  style={{ width: "100%", height: "400px" }}
                 />
               </Paper>
 
@@ -201,17 +212,32 @@ export default function AnalysisPage() {
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Model #1 (XGB) Performance on Test Data
                 </Typography>
-                <Image
-                  src={`data:image/png;base64,${xgbResult.performance_plot}`}
-                  alt="XGB Performance Plot"
-                  unoptimized
-                  width={800}
-                  height={400}
-                  style={{
-                    width: "100%",
-                    maxHeight: "400px",
-                    objectFit: "contain",
+                <Plot
+                  data={[]}
+                  layout={{
+                    images: [
+                      {
+                        source: `data:image/png;base64,${xgbResult.performance_plot}`,
+                        xref: "paper",
+                        yref: "paper",
+                        x: 0,
+                        y: 1,
+                        sizex: 1,
+                        sizey: 1,
+                        opacity: 1,
+                        layer: "below",
+                      },
+                    ],
+                    xaxis: { visible: false },
+                    yaxis: { visible: false },
+                    margin: { l: 0, r: 0, t: 0, b: 0 },
+                    width: 800,
+                    height: 400,
+                    paper_bgcolor: "black",
+                    plot_bgcolor: "black",
                   }}
+                  config={{ displayModeBar: false }}
+                  style={{ width: "100%", height: "400px" }}
                 />
               </Paper>
             </>
@@ -230,17 +256,32 @@ export default function AnalysisPage() {
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Model #2 (LSTM) Loss Curve
                 </Typography>
-                <Image
-                  src={`data:image/png;base64,${lstmResult.train_loss_curve}`}
-                  alt="LSTM Training Loss"
-                  unoptimized
-                  width={800}
-                  height={400}
-                  style={{
-                    width: "100%",
-                    maxHeight: "400px",
-                    objectFit: "contain",
+                <Plot
+                  data={[]}
+                  layout={{
+                    images: [
+                      {
+                        source: `data:image/png;base64,${lstmResult.train_loss_curve}`,
+                        xref: "paper",
+                        yref: "paper",
+                        x: 0,
+                        y: 1,
+                        sizex: 1,
+                        sizey: 1,
+                        opacity: 1,
+                        layer: "below",
+                      },
+                    ],
+                    xaxis: { visible: false },
+                    yaxis: { visible: false },
+                    margin: { l: 0, r: 0, t: 0, b: 0 },
+                    width: 800,
+                    height: 400,
+                    paper_bgcolor: "black",
+                    plot_bgcolor: "black",
                   }}
+                  config={{ displayModeBar: false }}
+                  style={{ width: "100%", height: "400px" }}
                 />
               </Paper>
 
@@ -255,17 +296,32 @@ export default function AnalysisPage() {
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Model #2 (LSTM) Performance on Test Data
                 </Typography>
-                <Image
-                  src={`data:image/png;base64,${lstmResult.test_predictions_plot}`}
-                  alt="LSTM Test Predictions"
-                  unoptimized
-                  width={800}
-                  height={400}
-                  style={{
-                    width: "100%",
-                    maxHeight: "400px",
-                    objectFit: "contain",
+                <Plot
+                  data={[]}
+                  layout={{
+                    images: [
+                      {
+                        source: `data:image/png;base64,${lstmResult.test_predictions_plot}`,
+                        xref: "paper",
+                        yref: "paper",
+                        x: 0,
+                        y: 1,
+                        sizex: 1,
+                        sizey: 1,
+                        opacity: 1,
+                        layer: "below",
+                      },
+                    ],
+                    xaxis: { visible: false },
+                    yaxis: { visible: false },
+                    margin: { l: 0, r: 0, t: 0, b: 0 },
+                    width: 800,
+                    height: 400,
+                    paper_bgcolor: "black",
+                    plot_bgcolor: "black",
                   }}
+                  config={{ displayModeBar: false }}
+                  style={{ width: "100%", height: "400px" }}
                 />
               </Paper>
             </>
@@ -342,13 +398,7 @@ export default function AnalysisPage() {
       </Grid>
 
       {/* Navigation Buttons */}
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        mt={4}
-        gap={2}
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" mt={4} gap={2}>
         <Button
           variant="outlined"
           color="inherit"
