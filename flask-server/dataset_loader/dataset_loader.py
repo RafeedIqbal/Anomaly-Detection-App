@@ -8,7 +8,7 @@ import os
 from tqdm import tqdm
 import zipfile
 import json
-from io import BytesIO  # added for in-memory processing
+from io import BytesIO  # used for in-memory processing
 
 def create_train_test_split(dataset: pd.DataFrame, target: str = None, split_coeff: float = 0.8, dt=None) -> tuple:
     training_cutoff = int(split_coeff * len(dataset))
@@ -70,10 +70,9 @@ class IESODataset(Dataset):
         self.target_options = self.generate_target_options()
         self.target_val = None  # auto-generated
         self.available_files, self.filetype, self.available_dates, self.date_type = self.get_metadata()
-        self.selected_local_files, self.selected_dates = None, None
-        self.default_filename = "ieso_dataset.json"
-        # For FSA in-memory processing
+        # For in-memory processing, both for FSA and zonal
         self.in_memory_files = []
+        self.default_filename = "ieso_dataset.json"
 
     def generate_target_options(self):
         # called by app to display region selection options
@@ -183,7 +182,7 @@ class IESODataset(Dataset):
         if start_date > end_date:
             raise ValueError("Start date must be before or equal to end date")
 
-        # Create data directory if it doesn't exist
+        # Ensure the data directory exists (if needed for any fallback)
         os.makedirs(self.data_dir, exist_ok=True)
 
         files = self.available_files
@@ -192,8 +191,6 @@ class IESODataset(Dataset):
 
         # Filter files based on date range
         selected_files = [f for f, d in zip(files, self.available_dates) if start_date <= int(d) <= end_date]
-        self.selected_files = selected_files
-
         if len(selected_files) == 0:
             raise ValueError("No files found for the given date range, please check the date range and try again.\
                         For FSA data, the date range should be in the format YYYYMM.\
@@ -234,33 +231,31 @@ class IESODataset(Dataset):
                     self.in_memory_files.extend(future.result())
 
     def download_csv_dataset(self, files):
+        """
+        Download CSV files in memory without writing to disk.
+        """
+        self.in_memory_files = []
         def download_file(url, pbar):
-            filename = url.split('/')[-1]
             try:
-                response = requests.get(url, stream=True)
-                file_path = os.path.join(self.data_dir, filename)
-                with open(file_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                if not hasattr(self, 'downloaded_filenames'):
-                    self.downloaded_filenames = []
-                self.downloaded_filenames.append(filename)
+                response = requests.get(url)
+                response.raise_for_status()
+                file_content = response.content
+                filename = url.split('/')[-1]
                 pbar.update(1)
-                return True
+                return (filename, file_content)
             except Exception as e:
-                print(f"Error downloading {filename}: {str(e)}")
-                return False
+                print(f"Error downloading CSV from {url}: {str(e)}")
+                pbar.update(1)
+                return None
 
-        with tqdm(total=len(files), desc="Downloading CSV files") as pbar:
+        with tqdm(total=len(files), desc="Downloading CSV files in memory") as pbar:
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = []
-                for url in files:
-                    futures.append(executor.submit(download_file, url, pbar))
+                futures = [executor.submit(download_file, url, pbar) for url in files]
                 concurrent.futures.wait(futures)
-        self.selected_local_files = self.downloaded_filenames
-        self.selected_local_files.sort()
-        del self.downloaded_filenames
+                for future in futures:
+                    result = future.result()
+                    if result is not None:
+                        self.in_memory_files.append(result)
 
     def parse_fsa_file(self, file_content, target_val, target_name):
         """
@@ -276,8 +271,14 @@ class IESODataset(Dataset):
         df = df[['DateTime', target_name]]
         return df
 
-    def parse_zonal_file(self, filepath, target_val, target_name):
-        df = pd.read_csv(filepath, header=3)
+    def parse_zonal_file(self, file_content, target_val, target_name):
+        """
+        Parse a zonal CSV file from in-memory content.
+        """
+        import io
+        file_obj = io.BytesIO(file_content)
+        df = pd.read_csv(file_obj, header=3)
+        # For zonal files, the target value isn't used for filtering.
         df['DateTime'] = pd.to_datetime(df['Date'], utc=False) + pd.to_timedelta(df['Hour'], unit='h')
         df = df[['DateTime', target_name]]
         return df
@@ -285,40 +286,31 @@ class IESODataset(Dataset):
     def parse_dataset(self, chunk_size=4):
         """
         Parse dataset files in sequential chunks and concatenate results.
-        For FSA datasets, process in-memory files.
+        For both FSA and zonal datasets, process the in-memory files.
         """
         target_val = self.target_val
         target_name = self.target_name
-        if not hasattr(self, 'target_val') or self.target_val is None:
-            raise ValueError("No target value set. Please call set_target() first.")
+        if self.dataset_type not in ["zonal", "fsa"]:
+            raise ValueError("Dataset type must be either 'zonal' or 'fsa'. Ensure target value is set.")
 
         results = []
-        if self.dataset_type == "zonal":
-            files = self.selected_local_files
-            data_dir = self.data_dir
-            file_chunks = [files[i:i + chunk_size] for i in range(0, len(files), chunk_size)]
-            for chunk in tqdm(file_chunks, desc="Processing chunks"):
-                chunk_dfs = []
-                for file in chunk:
-                    try:
-                        filepath = os.path.join(data_dir, file)
-                        chunk_dfs.append(self.parse_zonal_file(filepath, target_val, target_name))
-                    except Exception as e:
-                        print(f"Error processing {file}: {str(e)}")
-                if chunk_dfs:
-                    results.append(pd.concat(chunk_dfs))
-        elif self.dataset_type == "fsa":
-            files = self.in_memory_files
-            file_chunks = [files[i:i + chunk_size] for i in range(0, len(files), chunk_size)]
-            for chunk in tqdm(file_chunks, desc="Processing in-memory chunks"):
-                chunk_dfs = []
-                for filename, file_content in chunk:
-                    try:
+        # Both dataset types now use in_memory_files.
+        files = self.in_memory_files
+        file_chunks = [files[i:i + chunk_size] for i in range(0, len(files), chunk_size)]
+        desc = "Processing in-memory chunks"
+        for chunk in tqdm(file_chunks, desc=desc):
+            chunk_dfs = []
+            for filename, file_content in chunk:
+                try:
+                    if self.dataset_type == "zonal":
+                        # For zonal data, target_val is not used for filtering.
+                        chunk_dfs.append(self.parse_zonal_file(file_content, None, target_name))
+                    elif self.dataset_type == "fsa":
                         chunk_dfs.append(self.parse_fsa_file(file_content, target_val, target_name))
-                    except Exception as e:
-                        print(f"Error processing {filename}: {str(e)}")
-                if chunk_dfs:
-                    results.append(pd.concat(chunk_dfs))
+                except Exception as e:
+                    print(f"Error processing {filename}: {str(e)}")
+            if chunk_dfs:
+                results.append(pd.concat(chunk_dfs))
         return pd.concat(results, ignore_index=True) if results else pd.DataFrame()
 
     def load_dataset(self, start_date: str = None, end_date: str = None, target_idx: int = None, download: bool = True, filepath: str = None, chunk_size: int = 4):
@@ -367,7 +359,7 @@ class IESODataset(Dataset):
                 'target_val': self.target_val,
                 'date_range': self.selected_dates,
                 'filetype': self.filetype,
-                'files': self.selected_local_files if self.dataset_type == "zonal" else "in-memory",
+                'files': "in-memory",
                 'column_types': {col: str(dtype) for col, dtype in self.df.dtypes.items()}
             },
             'data': df_to_save.to_dict(orient='records')
@@ -391,7 +383,8 @@ class IESODataset(Dataset):
         self.target_val = metadata['target_val']
         self.selected_dates = metadata['date_range']
         self.filetype = metadata['filetype']
-        self.selected_local_files = metadata['files']
+        # For in-memory processing, we set this to "in-memory"
+        self.in_memory_files = "in-memory"
 
         start_date = str(self.selected_dates[0])
         end_date = str(self.selected_dates[1])
@@ -598,7 +591,7 @@ class ClimateDataset(Dataset):
         self.target_val = metadata['target_val']
         self.selected_dates = metadata['date_range']
         self.filetype = metadata['filetype']
-        self.selected_local_files = metadata['files']
+        self.in_memory_files = "in-memory"
 
         start_date = str(self.selected_dates[0])
         end_date = str(self.selected_dates[1])
