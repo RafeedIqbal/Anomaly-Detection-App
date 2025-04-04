@@ -3,7 +3,7 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token, ge
 from flask_cors import CORS  # Enable CORS for cross-origin requests
 from auth import authenticate_user, register_user
 from models import XGB_MT1R1, LSTM_FINAL  # Import the model training functions
-from dataset_loader import load_ieso_dataset, load_climate_dataset, IESODataset  # Import data loaders
+from dataset_loader import IESODataset, ClimateDataset  # Updated import for new dataset loader
 import datetime
 import pandas as pd
 import io, base64
@@ -112,12 +112,10 @@ def generate_csv():
             return jsonify({"error": f"Target zone '{target_zone}' not found. Available options: {target_options}."}), 400
 
         try:
-            energy_df = ds.load_dataset(start_date=start_year, end_date=end_year, target_idx=target_idx, download=True)
+            # Convert years to strings
+            energy_df = ds.load_dataset(start_date=str(start_year), end_date=str(end_year), target_idx=target_idx, download=True)
         except Exception as e:
             return jsonify({"error": f"Error loading zonal dataset: {str(e)}"}), 500
-
-        climate_start_year = start_year
-        climate_end_year = end_year
 
     elif dataset_type == 'fsa':
         target_city = data.get('target_city')
@@ -149,32 +147,111 @@ def generate_csv():
             return jsonify({"error": f"Target city '{target_city}' not found. Available options: {ds.target_options}."}), 400
 
         try:
-            energy_df = ds.load_dataset(start_date=start_date, end_date=end_date, target_idx=target_idx, download=True)
+            # Convert dates to strings
+            energy_df = ds.load_dataset(start_date=str(start_date), end_date=str(end_date), target_idx=target_idx, download=True)
         except Exception as e:
             return jsonify({"error": f"Error loading FSA dataset: {str(e)}"}), 500
 
-        climate_start_year = start_year
-        climate_end_year = end_year
+    else:
+        return jsonify({"error": "Invalid dataset_type provided."}), 400
 
     if predictor_repo in ['climate', 'weather']:
         try:
-            predictor_df = load_climate_dataset(climate_start_year, climate_end_year, join=True)
+            # Instantiate and load the climate dataset using the IESO dataset instance
+            climate_ds = ClimateDataset(ds, region="ON")
+            # Make sure datetime_range is set on ds before passing to ClimateDataset
+            # The IESODataset.load_dataset call already calls ds.set_datetime()
+            # climate_ds.datetime_range = ds.datetime_range # Ensure range is passed if needed before load
+
+            climate_ds.load_dataset(download=True)
+            predictor_df = climate_ds.df
+
+            # --- START REVISED LOGIC for predictor_df DateTime column ---
+            if "DateTime" not in predictor_df.columns:
+                # Check if 'time' (common from meteostat) is the index name or a column
+                if isinstance(predictor_df.index, pd.DatetimeIndex):
+                    # Get the actual index name (could be 'time' or None)
+                    index_name = predictor_df.index.name
+                    predictor_df = predictor_df.reset_index()
+                    # Rename the column that was the index
+                    if index_name and index_name in predictor_df.columns:
+                        predictor_df = predictor_df.rename(columns={index_name: "DateTime"})
+                    # If index had no name, reset_index usually creates 'index'
+                    elif 'index' in predictor_df.columns:
+                         predictor_df = predictor_df.rename(columns={'index': "DateTime"})
+                    else:
+                         # Should not happen if index was DatetimeIndex, but safety check
+                         return jsonify({"error": f"Predictor dataset index reset failed unexpectedly."}), 500
+
+                elif 'time' in predictor_df.columns:
+                     # If 'time' was somehow already a column
+                     predictor_df = predictor_df.rename(columns={"time": "DateTime"})
+                else:
+                    # If no DateTime column and no recognizable time index/column
+                    return jsonify({"error": "Predictor dataset lacks a 'DateTime' column and a recognizable time index/column."}), 500
+            # --- END REVISED LOGIC ---
+
         except Exception as e:
-            return jsonify({"error": f"Error loading climate dataset: {str(e)}"}), 500
+            import traceback
+            print("Error during climate data loading/processing:")
+            print(traceback.format_exc())
+            return jsonify({"error": f"Error loading or processing climate dataset: {str(e)}"}), 500
     else:
         return jsonify({"error": f"Predictor repository '{predictor_repo}' is not supported."}), 400
 
     try:
-        merged_df = pd.merge(energy_df, predictor_df, on="DateTime")
+        # Reset energy_df index so that DateTime is a column
+        if isinstance(energy_df.index, pd.DatetimeIndex): # Check if index needs reset
+             energy_df = energy_df.reset_index()
+
+        # Ensure 'DateTime' column exists in energy_df after potential reset
+        if 'DateTime' not in energy_df.columns:
+             # Maybe the index wasn't named 'DateTime'? Check for 'index' col
+             if 'index' in energy_df.columns and pd.api.types.is_datetime64_any_dtype(energy_df['index']):
+                 energy_df = energy_df.rename(columns={'index': 'DateTime'})
+             else:
+                return jsonify({"error": f"Energy dataset missing 'DateTime' column after index reset. Columns: {energy_df.columns.tolist()}"}), 500
+
+        # Ensure 'DateTime' column exists in predictor_df (should be handled above, but double check)
+        if 'DateTime' not in predictor_df.columns:
+             return jsonify({"error": f"Predictor dataset missing 'DateTime' column before merge. Columns: {predictor_df.columns.tolist()}"}), 500
+
+        # Convert DateTime columns to same type if needed (optional, usually okay)
+        # energy_df['DateTime'] = pd.to_datetime(energy_df['DateTime'])
+        # predictor_df['DateTime'] = pd.to_datetime(predictor_df['DateTime'])
+
+        # Perform the merge (use inner join by default)
+        merged_df = pd.merge(energy_df, predictor_df, on="DateTime", how="inner")
+
+        # Check if merge resulted in empty dataframe (might indicate mismatch in dates)
+        if merged_df.empty:
+            print("Warning: Merged dataframe is empty. Check date ranges and timezones.")
+            # Decide if this is an error or just returning empty data
+            # return jsonify({"error": "Merging resulted in an empty dataset. Check date ranges."}), 400
+
+    except KeyError as e:
+         # More specific error message if merge fails due to missing column despite checks
+         missing_in_energy = 'DateTime' not in energy_df.columns
+         missing_in_predictor = 'DateTime' not in predictor_df.columns
+         return jsonify({
+             "error": f"Error merging datasets: KeyError on column '{e}'. 'DateTime' in energy_df? {not missing_in_energy}. 'DateTime' in predictor_df? {not missing_in_predictor}.",
+             "energy_cols": energy_df.columns.tolist(),
+             "predictor_cols": predictor_df.columns.tolist()
+             }), 500
     except Exception as e:
+        import traceback
+        print("Error during dataset merging:")
+        print(traceback.format_exc())
         return jsonify({"error": f"Error merging datasets: {str(e)}"}), 500
 
+    # Convert to CSV and return
     csv_data = merged_df.to_csv(index=False)
     return Response(
         csv_data,
         mimetype="text/csv",
         headers={"Content-disposition": "attachment; filename=merged_data.csv"}
     )
+
 
 @app.route('/anomaly_detection', methods=['POST'])
 def anomaly_detection_route():

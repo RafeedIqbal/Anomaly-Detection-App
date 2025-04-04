@@ -34,71 +34,22 @@ const zonalOptions = [
 ];
 
 // Options for FSA dataset (loaded from message.txt)
-const fsaOptions = [
-  "Toronto", "Ottawa", "Hamilton", "Mississauga", "Brampton", "Kitchener", "London", "Markham", "Oshawa", "Vaughan",
-  "Windsor", "St. Catharines", "Oakville", "Richmond Hill", "Burlington", "Sudbury", "Barrie", "Guelph", "Whitby",
-  "Cambridge", "Milton", "Ajax", "Waterloo", "Thunder Bay", "Brantford", "Chatham", "Clarington", "Pickering",
-  "Niagara Falls", "Newmarket", "Peterborough", "Kawartha Lakes", "Caledon", "Belleville", "Sarnia",
-  "Sault Ste. Marie", "Welland", "Halton Hills", "Aurora", "North Bay", "Stouffville", "Cornwall", "Georgina",
-  "Woodstock", "Quinte West", "St. Thomas", "New Tecumseth", "Innisfil", "Bradford West Gwillimbury", "Timmins",
-  "Lakeshore", "Brant", "Leamington", "East Gwillimbury", "Orangeville", "Orillia", "Stratford", "Fort Erie",
-  "LaSalle", "Centre Wellington", "Grimsby", "King", "Woolwich", "Clarence-Rockland", "Midland", "Lincoln",
-  "Wasaga Beach", "Collingwood", "Strathroy-Caradoc", "Thorold", "Amherstburg", "Tecumseh", "Essa", "Owen Sound",
-  "Brockville", "Kingsville", "Springwater", "Scugog", "Uxbridge", "Wilmot", "Essex", "Oro-Medonte", "Cobourg",
-  "South Frontenac", "Port Colborne", "Huntsville", "Russell", "Niagara-on-the-Lake", "Middlesex Centre", "Selwyn",
-  "Tillsonburg", "Pelham", "Petawawa", "North Grenville", "Loyalist", "Port Hope", "Pembroke", "Bracebridge",
-  "Greater Napanee", "Kenora", "Mississippi Mills", "St. Clair", "West Lincoln", "West Nipissing / Nipissing Ouest",
-  "Clearview", "Thames Centre", "Carleton Place", "Guelph/Eramosa", "Central Elgin", "Saugeen Shores",
-  "Ingersoll", "South Stormont", "Severn", "South Glengarry", "North Perth", "Trent Hills", "The Nation / La Nation",
-  "West Grey", "Gravenhurst", "Perth East", "Wellington North", "Brighton", "Tiny", "Hawkesbury", "Brock",
-  "Erin", "Kincardine", "Elliot Lake", "Arnprior", "North Dundas", "Wellesley", "Georgian Bluffs", "Norwich",
-  "Meaford", "Adjala-Tosorontio", "Hamilton Township", "South Dundas", "Lambton Shores", "North Dumfries",
-  "Mapleton", "Rideau Lakes", "North Glengarry", "South Huron", "Penetanguishene", "Tay", "Cavan Monaghan",
-  "Temiskaming Shores", "Grey Highlands", "Alfred and Plantagenet", "Elizabethtown-Kitley", "Smiths Falls",
-  "Ramara", "Leeds and the Thousand Islands", "Brockton", "Laurentian Valley", "Mono", "Malahide", "Huron East",
-  "Beckwith", "Shelburne", "West Perth", "Champlain", "Minto", "South Bruce Peninsula", "Renfrew", "Plympton-Wyoming",
-  "Kapuskasing", "Zorra", "Kirkland Lake", "Aylmer", "Puslinch", "Drummond/North Elmsley", "Hanover", "Dryden",
-  "Fort Frances", "Goderich", "Stone Mills", "South-West Oxford", "Douro-Dummer", "McNab/Braeside",
-  "Central Huron", "Blandford-Blenheim", "Bayham", "Augusta", "St. Marys", "Southgate", "Bluewater",
-  "East Zorra-Tavistock", "Huron-Kinloss", "The Blue Mountains", "Whitewater Region", "Edwardsburgh/Cardinal",
-  "Wainfleet", "North Stormont", "Alnwick/Haldimand", "Arran-Elderslie", "Parry Sound", "Muskoka Falls",
-  "Perth", "Cramahe", "North Middlesex", "Dysart et al", "Hindon Hill", "Tweed", "Oliver Paipoonge", "Petrolia",
-  "Southwest Middlesex", "Front of Yonge", "Tay Valley", "South Bruce", "Ashfield-Colborne-Wawanosh", "Trent Lakes",
-  "Gananoque", "Lanark Highlands", "Cochrane", "Sioux Lookout", "Hearst", "Breslau", "Stirling-Rawdon",
-  "Espanola", "West Elgin", "East Ferris", "North Huron", "Southwold", "Centre Hastings", "Lucan Biddulph",
-  "Greenstone", "Tyendinaga", "Iroquois Falls", "Havelock-Belmont-Methuen", "Central Frontenac", "Seguin",
-  "Madawaska Valley", "Deep River", "Asphodel-Norwood", "Red Lake", "Hastings Highlands", "Prescott",
-  "Northern Bruce Peninsula", "Casselman", "Callander", "Amaranth", "Marmora and Lake", "Bancroft", "Howick",
-  "Dutton/Dunwich", "Perth South", "Montague", "Warwick", "Bonnechere Valley", "Morris-Turnberry", "Mulmur",
-  "Blind River", "Powassan", "Highlands East", "East Hawkesbury", "Marathon", "Shuniah", "Sables-Spanish Rivers",
-  "Lake of Bays", "Merrickville", "Adelaide-Metcalfe", "Melancthon", "Laurentian Hills", "Grand Valley",
-  "Admaston/Bromley", "North Algona Wilberforce", "Wawa", "Horton", "Enniskillen", "Atikokan", "Markstay",
-  "Northeastern Manitoulin and the Islands", "McDougall", "French River / Rivière des Français", "East Garafraxa",
-  "Greater Madawaska", "Georgian Bay", "North Kawartha", "Perry", "Black River-Matheson", "Killaloe, Hagarty and Richards",
-  "Alvinston", "Algonquin Highlands", "Addington Highlands", "Neebing", "Bonfield", "Central Manitoulin", "Madoc",
-  "Mattawa", "Dawn-Euphemia", "Chapleau", "Manitouwadge", "Wellington", "Frontenac Islands", "Point Edward",
-  "North Frontenac", "Komoka", "Deseronto", "Nipissing", "Huron Shores", "Nipigon", "Burford", "Terrace Bay",
-  "Macdonald, Meredith and Aberdeen Additional", "Brudenell, Lyndoch and Raglan", "Moosonee", "Englehart",
-  "Strong", "Lappe", "Armour", "Faraday", "Bayfield", "St.-Charles", "Emo", "Smooth Rock Falls", "Chisholm",
-  "Thessalon", "Conestogo", "St. Joseph", "Moonbeam", "Claremont", "Ignace", "Armstrong", "Hillsburgh",
-  "Sagamok", "Hensall", "Carling", "Laird", "Tara", "Cobalt", "South River", "McKellar", "South Algonquin",
-  "Sioux Narrows-Nestor Falls", "Beachburg", "Schreiber", "Plantagenet", "Papineau-Cameron", "Assiginack", "Prince",
-  "Athens", "Chatsworth", "Magnetawan"
-];
+const fsaOptions = ['Toronto', 'Ottawa', 'Hamilton', 'Mississauga', 'Brampton', 'Kitchener', 'London', 'Markham', 'Oshawa', 'Vaughan', 'Windsor', 'St. Catharines', 'Oakville', 'Richmond Hill', 'Burlington', 'Sudbury', 'Barrie', 'Guelph', 'Whitby', 'Cambridge', 'Milton', 'Ajax', 'Waterloo', 'Thunder Bay', 'Brantford', 'Chatham', 'Clarington', 'Pickering', 'Niagara Falls', 'Newmarket', 'Peterborough', 'Kawartha Lakes', 'Caledon', 'Belleville', 'Sarnia', 'Sault Ste. Marie', 'Welland', 'Halton Hills', 'Aurora', 'North Bay', 'Stouffville', 'Cornwall', 'Georgina', 'Woodstock', 'Quinte West', 'St. Thomas', 'New Tecumseth', 'Innisfil', 'Bradford West Gwillimbury', 'Timmins', 'Lakeshore', 'Brant', 'Leamington', 'East Gwillimbury', 'Orangeville', 'Orillia', 'Stratford', 'Fort Erie', 'LaSalle', 'Centre Wellington', 'Grimsby', 'King', 'Woolwich', 'Clarence-Rockland', 'Midland', 'Lincoln', 'Wasaga Beach', 'Collingwood', 'Strathroy-Caradoc', 'Thorold', 'Amherstburg', 'Tecumseh', 'Essa', 'Owen Sound', 'Brockville', 'Kingsville', 'Springwater', 'Scugog', 'Uxbridge', 'Wilmot', 'Essex', 'Oro-Medonte', 'Cobourg', 'South Frontenac', 'Port Colborne', 'Huntsville', 'Russell', 'Niagara-on-the-Lake', 'Middlesex Centre', 'Selwyn', 'Tillsonburg', 'Pelham', 'Petawawa', 'North Grenville', 'Loyalist', 'Port Hope', 'Pembroke', 'Bracebridge', 'Greater Napanee', 'Kenora', 'Mississippi Mills', 'St. Clair', 'West Lincoln', 'West Nipissing / Nipissing Ouest', 'Clearview', 'Thames Centre', 'Carleton Place', 'Guelph/Eramosa', 'Central Elgin', 'Saugeen Shores', 'Ingersoll', 'South Stormont', 'Severn', 'South Glengarry', 'North Perth', 'Trent Hills', 'The Nation / La Nation', 'West Grey', 'Gravenhurst', 'Perth East', 'Wellington North', 'Brighton', 'Tiny', 'Hawkesbury', 'Brock', 'Erin', 'Kincardine', 'Elliot Lake', 'Arnprior', 'North Dundas', 'Wellesley', 'Georgian Bluffs', 'Norwich', 'Meaford', 'Adjala-Tosorontio', 'Hamilton Township', 'South Dundas', 'Lambton Shores', 'North Dumfries', 'Mapleton', 'Rideau Lakes', 'North Glengarry', 'South Huron', 'Penetanguishene', 'Tay', 'Cavan Monaghan', 'Temiskaming Shores', 'Grey Highlands', 'Alfred and Plantagenet', 'Elizabethtown-Kitley', 'Smiths Falls', 'Ramara', 'Leeds and the Thousand Islands', 'Brockton', 'Laurentian Valley', 'Mono', 'Malahide', 'Huron East', 'Beckwith', 'Shelburne', 'West Perth', 'Champlain', 'Minto', 'South Bruce Peninsula', 'Renfrew', 'Plympton-Wyoming', 'Kapuskasing', 'Zorra', 'Kirkland Lake', 'Aylmer', 'Puslinch', 'Drummond/North Elmsley', 'Hanover', 'Dryden', 'Fort Frances', 'Goderich', 'Stone Mills', 'South-West Oxford', 'Douro-Dummer', 'McNab/Braeside', 'Central Huron', 'Blandford-Blenheim', 'Bayham', 'Augusta', 'St. Marys', 'Southgate', 'Bluewater', 'East Zorra-Tavistock', 'Otonabee-South Monaghan', 'Huron-Kinloss', 'The Blue Mountains', 'Whitewater Region', 'Edwardsburgh/Cardinal', 'Wainfleet', 'North Stormont', 'Alnwick/Haldimand', 'Arran-Elderslie', 'Parry Sound', 'Muskoka Falls', 'Perth', 'Cramahe', 'North Middlesex', 'Dysart et al', 'Hindon Hill', 'Tweed', 'Oliver Paipoonge', 'Petrolia', 'Southwest Middlesex', 'Front of Yonge', 'Tay Valley', 'South Bruce', 'Ashfield-Colborne-Wawanosh', 'Trent Lakes', 'Gananoque', 'Lanark Highlands', 'Cochrane', 'Sioux Lookout', 'Hearst', 'Breslau', 'Stirling-Rawdon', 'Espanola', 'West Elgin', 'East Ferris', 'North Huron', 'Southwold', 'Centre Hastings', 'Lucan Biddulph', 'Greenstone', 'Tyendinaga', 'Iroquois Falls', 'Havelock-Belmont-Methuen', 'Central Frontenac', 'Seguin', 'Madawaska Valley', 'Deep River', 'Asphodel-Norwood', 'Red Lake', 'Hastings Highlands', 'Prescott', 'Northern Bruce Peninsula', 'Casselman', 'Callander', 'Amaranth', 'Marmora and Lake', 'Bancroft', 'Howick', 'Dutton/Dunwich', 'Perth South', 'Montague', 'Warwick', 'Bonnechere Valley', 'Morris-Turnberry', 'Mulmur', 'Blind River', 'Powassan', 'Highlands East', 'East Hawkesbury', 'Marathon', 'Shuniah', 'Sables-Spanish Rivers', 'Lake of Bays', 'Merrickville', 'Adelaide-Metcalfe', 'Melancthon', 'Laurentian Hills', 'Grand Valley', 'Admaston/Bromley', 'North Algona Wilberforce', 'Wawa', 'Horton', 'Enniskillen', 'Atikokan', 'Markstay', 'Northeastern Manitoulin and the Islands', 'McDougall', 'French River / Rivière des Français', 'East Garafraxa', 'Greater Madawaska', 'Georgian Bay', 'North Kawartha', 'Perry', 'Black River-Matheson', 'Killaloe, Hagarty and Richards', 'Alvinston', 'Algonquin Highlands', 'Addington Highlands', 'Neebing', 'Bonfield', 'Central Manitoulin', 'Madoc', 'Mattawa', 'Dawn-Euphemia', 'Chapleau', 'Manitouwadge', 'Wellington', 'Frontenac Islands', 'Point Edward', 'North Frontenac', 'Komoka', 'Deseronto', 'Nipissing', 'Huron Shores', 'Nipigon', 'Burford', 'Terrace Bay', 'Macdonald, Meredith and Aberdeen Additional', 'Brudenell, Lyndoch and Raglan', 'Moosonee', 'Englehart', 'Strong', 'Lappe', 'Armour', 'Faraday', 'Bayfield', 'St.-Charles', 'Emo', 'Smooth Rock Falls', 'Chisholm', 'Thessalon', 'Conestogo', 'St. Joseph', 'Moonbeam', 'Claremont', 'Ignace', 'Armstrong', 'Hillsburgh', 'Sagamok', 'Hensall', 'Carling', 'Laird', 'Tara', 'Cobalt', 'South River', 'McKellar', 'South Algonquin', 'Sioux Narrows-Nestor Falls', 'Beachburg', 'Schreiber', 'Plantagenet', 'Papineau-Cameron', 'Assiginack', 'Prince', 'Athens', 'Chatsworth', 'Magnetawan'];
 
 const CreateDatasetPage: React.FC = () => {
-  const { setCsvData } = useContext(CsvContext);
+  // Now also destructure csvData to access the generated CSV content.
+  const { csvData, setCsvData } = useContext(CsvContext);
   const router = useRouter();
 
   // Form state
   const [datasetType, setDatasetType] = useState<string>("FSA");
   const [repository, setRepository] = useState<string>("climate");
   const [target, setTarget] = useState<string>(
-    datasetType === "FSA" ? fsaOptions[0] : zonalOptions[0]
+    "FSA" === "FSA" ? fsaOptions[0] : zonalOptions[0]
   );
   // Date fields for FSA (month inputs) and Zonal (year inputs)
   const [startMonthFSA, setStartMonthFSA] = useState<string>("2018-01");
-  const [endMonthFSA, setEndMonthFSA] = useState<string>("2024-11");
+  const [endMonthFSA, setEndMonthFSA] = useState<string>("2024-12");
   const [startYearZonal, setStartYearZonal] = useState<string>("2003");
   const [endYearZonal, setEndYearZonal] = useState<string>("2024");
 
@@ -125,8 +76,9 @@ const CreateDatasetPage: React.FC = () => {
     setSuccess("");
     setLoading(true);
     try {
+      // Always send dataset_type in lower-case
       let postData: any = {
-        dataset_type: datasetType,
+        dataset_type: datasetType.toLowerCase(),
         predictor_repo: repository,
       };
 
@@ -170,6 +122,19 @@ const CreateDatasetPage: React.FC = () => {
 
   const handleProceed = () => {
     router.push("/dataset/analysis");
+  };
+
+  // New function to download the CSV
+  const handleDownloadCSV = () => {
+    if (!csvData?.original) return;
+    const blob = new Blob([csvData.original], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "generated.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -279,7 +244,7 @@ const CreateDatasetPage: React.FC = () => {
                   fullWidth
                   value={startMonthFSA}
                   onChange={(e) => setStartMonthFSA(e.target.value)}
-                  InputProps={{ inputProps: { min: "2018-01", max: "2024-11" } }}
+                  InputProps={{ inputProps: { min: "2018-01", max: "2024-12" } }}
                 />
                 <TextField
                   label="End Year/Month"
@@ -287,7 +252,7 @@ const CreateDatasetPage: React.FC = () => {
                   fullWidth
                   value={endMonthFSA}
                   onChange={(e) => setEndMonthFSA(e.target.value)}
-                  InputProps={{ inputProps: { min: "2018-01", max: "2024-11" } }}
+                  InputProps={{ inputProps: { min: "2018-01", max: "2024-12" } }}
                 />
               </>
             ) : (
@@ -326,16 +291,31 @@ const CreateDatasetPage: React.FC = () => {
               )}
             </Button>
           </Box>
+
           {success && (
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={handleProceed}
-              fullWidth
-              sx={{ mt: 2 }}
-            >
-              Proceed
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={handleProceed}
+                fullWidth
+                sx={{ mt: 2 }}
+              >
+                Proceed
+              </Button>
+              {/* New Download CSV button */}
+              {csvData?.original && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleDownloadCSV}
+                  fullWidth
+                  sx={{ mt: 2 }}
+                >
+                  Download CSV
+                </Button>
+              )}
+            </>
           )}
         </Paper>
       </Box>
