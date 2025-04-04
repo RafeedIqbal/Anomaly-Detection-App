@@ -21,8 +21,9 @@ export default function AnomalyDetectionPage() {
     const csvString = csvData.xgb ? csvData.xgb : csvData.lstm;
     const blob = new Blob([csvString], { type: "text/csv" });
     const formData = new FormData();
+    const targetColumn = csvData && (csvData as any).target ? (csvData as any).target : "Toronto";
     formData.append("file", blob, "anomaly_data.csv");
-    formData.append("target", "Toronto");
+    formData.append("target", targetColumn);
 
     try {
       const res = await fetch("http://localhost:5000/anomaly_detection", {
@@ -42,30 +43,34 @@ export default function AnomalyDetectionPage() {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box sx={{ p: 4, textAlign: "center", color: "white" }}>
       <Typography variant="h4" gutterBottom>
-        Anomaly Detection
+      Anomaly Detection
+      </Typography>
+      <Typography variant="subtitle1" gutterBottom>
+      Click to run anomaly detection
       </Typography>
 
       <form onSubmit={handleSubmit}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: "wrap",
-            my: 2,
-          }}
+      <Box
+        sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 2,
+        flexWrap: "wrap",
+        my: 2,
+        }}
+      >
+        <Button
+        type="submit"
+        variant="contained"
+        color="primary"
+        disabled={!csvData || (!csvData.xgb && !csvData.lstm)}
         >
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={!csvData || (!csvData.xgb && !csvData.lstm)}
-          >
-            🚀 Run Detection
-          </Button>
-        </Box>
+        🚀 Run Detection
+        </Button>
+      </Box>
       </form>
 
       {error && (

@@ -12,31 +12,41 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-def XGB_MT1R1(df, target):
-    # Ensure target column exists
+# Function modified: Removed 'target' argument
+def XGB_MT1R1(df):
+    # Ensure dataframe has at least two columns
+    if len(df.columns) < 2:
+        raise ValueError("Input CSV must have at least two columns (e.g., DateTime and Target).")
+
+    # Infer target column from the second column header
+    target = df.columns[1]
+    print(f"Inferred target column for XGBoost: '{target}'") # Added for confirmation
+
+    # Ensure target column exists (redundant check, but good practice)
     if target not in df.columns:
-        raise ValueError(f"Target column '{target}' not found in CSV file")
-    
+        # This should ideally not happen if target = df.columns[1]
+        raise ValueError(f"Inferred target column '{target}' somehow not found in DataFrame.")
+
     # Create train-test split (80% train, 20% test)
     split_index = int(len(df) * 0.8)
     train_df = df.iloc[:split_index].reset_index(drop=True)
     test_df = df.iloc[split_index:].reset_index(drop=True)
 
     # Drop non-numeric columns from features (e.g., DateTime)
+    # Also drop the inferred target column
     X_train = train_df.drop(columns=[target]).select_dtypes(include=['number'])
     X_test = test_df.drop(columns=[target]).select_dtypes(include=['number'])
     y_train = train_df[target]
     y_test = test_df[target]
 
     # Train XGBoost model with evaluation results recorded
-    # n_estimators increased to 1000 to match the final example
     model = xgb.XGBRegressor(n_estimators=1000, eval_metric="rmse", use_label_encoder=False)
     model.fit(
         X_train, y_train,
         eval_set=[(X_train, y_train), (X_test, y_test)],
         verbose=False,
     )
-    
+
     # Retrieve evaluation results for loss curve plotting
     evals_result = model.evals_result()
     train_rmse_list = evals_result['validation_0']['rmse']
@@ -72,7 +82,7 @@ def XGB_MT1R1(df, target):
     plt.plot(test_df.index, y_test, label="Actual")
     plt.plot(test_df.index, y_test_pred, label="Predicted")
     plt.xlabel("Test Sample Index")
-    plt.ylabel("Target Value")
+    plt.ylabel(f"{target} Value") # Use inferred target name in label
     plt.title("Test Performance")
     plt.legend()
     buf2 = io.BytesIO()
@@ -83,14 +93,18 @@ def XGB_MT1R1(df, target):
 
     # Create output dataframe for anomaly detection:
     # Use the DateTime column from test_df if it exists; otherwise, generate one.
-    if 'DateTime' in test_df.columns:
-        date_column = test_df['DateTime']
+    # Check if the *first* column is named 'DateTime' or similar
+    first_col_name = df.columns[0]
+    if first_col_name.lower() == 'datetime': # Make check case-insensitive
+        date_column = test_df[first_col_name]
     else:
-        date_column = pd.Series(test_df.index, name="DateTime")
-    
+        # If first column isn't DateTime, use index for dates
+        print(f"Warning: First column ('{first_col_name}') not named 'DateTime'. Using index for dates in output.")
+        date_column = pd.Series(test_df.index, name="DateTime") # Still name it DateTime in output
+
     output_df = pd.DataFrame({
-        "DateTime": date_column,
-        target: y_test,
+        first_col_name: date_column, # Use original first column name or 'DateTime' if generated
+        target: y_test,              # Use inferred target name as column header
         "pred": y_test_pred,
     })
     output_df["error"] = (output_df[target] - output_df["pred"]).abs()
@@ -104,30 +118,39 @@ def XGB_MT1R1(df, target):
         "test_accuracy": test_accuracy,
         "loss_curve": loss_curve_base64,
         "performance_plot": performance_plot_base64,
-        "anomaly_csv": csv_output
+        "anomaly_csv": csv_output,
+        "target_column_used": target # Add confirmation of target used
     }
     return result
 
+# Function modified: Removed 'target' argument
+def LSTM_FINAL(df, look_back=6):
+     # Ensure dataframe has at least two columns
+    if len(df.columns) < 2:
+        raise ValueError("Input CSV must have at least two columns (e.g., DateTime and Target).")
 
-def LSTM_FINAL(df, target, look_back=6):
-    # Check that the target column exists
+    # Infer target column from the second column header
+    target = df.columns[1]
+    print(f"Inferred target column for LSTM: '{target}'") # Added for confirmation
+
+    # Ensure target column exists (redundant check)
     if target not in df.columns:
-        raise ValueError(f"Target column '{target}' not found in the data")
-    
-    # Use only the target column for prediction (preserve DateTime if available)
+        raise ValueError(f"Inferred target column '{target}' somehow not found in DataFrame.")
+
+    # Use only the target column for prediction (preserve DateTime if available in first col)
     data = df[[target]].copy()
-    
+
     # Scale data between 0 and 1
     scaler = MinMaxScaler(feature_range=(0, 1))
     data_scaled = scaler.fit_transform(data)
-    
+
     # Split data: 80% train, 20% test
     train_size = int(len(data_scaled) * 0.8)
     if train_size < look_back + 1 or (len(data_scaled) - train_size) < look_back + 1:
         raise ValueError("Not enough data available for a proper train/test split with the given look_back.")
     train_data = data_scaled[:train_size]
     test_data = data_scaled[train_size:]
-    
+
     # Create dataset with look-back
     def create_dataset(dataset, look_back=1):
         X, Y = [], []
@@ -135,41 +158,41 @@ def LSTM_FINAL(df, target, look_back=6):
             X.append(dataset[i:(i + look_back), 0])
             Y.append(dataset[i + look_back, 0])
         return np.array(X), np.array(Y)
-    
+
     X_train, Y_train = create_dataset(train_data, look_back)
     X_test, Y_test = create_dataset(test_data, look_back)
-    
+
     if X_train.shape[0] == 0 or X_test.shape[0] == 0:
         raise ValueError("Not enough samples in training or testing set after dataset creation.")
-    
+
     # Reshape input to be [samples, time_steps, features]
     X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
     X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
-    
-    # Build the LSTM model with 25 units per layer (matching the final example)
+
+    # Build the LSTM model
     model = Sequential()
     model.add(LSTM(units=25, return_sequences=True, input_shape=(look_back, 1)))
     model.add(LSTM(units=25))
     model.add(Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
-    
-    # Train the model (40 epochs and batch size 900 as in the final example)
+
+    # Train the model
     history = model.fit(X_train, Y_train, epochs=40, batch_size=900, verbose=0)
-    
+
     # Make predictions on training set and compute training metrics
     train_predict = model.predict(X_train)
     train_predict_inv = scaler.inverse_transform(train_predict)
     Y_train_inv = scaler.inverse_transform(Y_train.reshape(-1, 1))
     train_rmse = np.sqrt(mean_squared_error(Y_train_inv, train_predict_inv))
     train_r2 = r2_score(Y_train_inv, train_predict_inv)
-    
+
     # Make predictions on test set and compute test metrics
     test_predict = model.predict(X_test)
     test_predict_inv = scaler.inverse_transform(test_predict)
     Y_test_inv = scaler.inverse_transform(Y_test.reshape(-1, 1))
     test_rmse = np.sqrt(mean_squared_error(Y_test_inv, test_predict_inv))
     test_r2 = r2_score(Y_test_inv, test_predict_inv)
-    
+
     # Create training loss curve plot (MSE converted to RMSE per epoch)
     plt.figure(figsize=(10,6))
     train_loss_rmse = np.sqrt(np.array(history.history['loss']))
@@ -183,13 +206,13 @@ def LSTM_FINAL(df, target, look_back=6):
     buf1.seek(0)
     train_loss_curve = base64.b64encode(buf1.getvalue()).decode('utf-8')
     plt.close()
-    
+
     # Create test performance plot (actual vs. predicted)
     plt.figure(figsize=(10,6))
     plt.plot(Y_test_inv, label='Actual')
     plt.plot(test_predict_inv, label='Predicted')
     plt.xlabel('Test Sample Index')
-    plt.ylabel('Target Value')
+    plt.ylabel(f"{target} Value") # Use inferred target name in label
     plt.title('Test Performance')
     plt.legend()
     buf2 = io.BytesIO()
@@ -197,25 +220,33 @@ def LSTM_FINAL(df, target, look_back=6):
     buf2.seek(0)
     test_predictions_plot = base64.b64encode(buf2.getvalue()).decode('utf-8')
     plt.close()
-    
+
     # Create output CSV for anomaly detection:
-    # If a DateTime column exists in the original df, use it for the test set.
-    if 'DateTime' in df.columns:
-        # Reset the DateTime column to align with the test split and look_back offset
-        date_series = df['DateTime'].reset_index(drop=True)
+    # Check if the *first* column is named 'DateTime' or similar
+    first_col_name = df.columns[0]
+    if first_col_name.lower() == 'datetime': # Make check case-insensitive
+        date_series = df[first_col_name].reset_index(drop=True)
+        # Align dates with Y_test_inv, considering train_size and look_back offset
         test_dates = date_series[train_size + look_back:].reset_index(drop=True)
+        # Ensure the length matches Y_test_inv
+        if len(test_dates) != len(Y_test_inv):
+             print(f"Warning: Length mismatch between test dates ({len(test_dates)}) and test predictions ({len(Y_test_inv)}). Using index for dates.")
+             test_dates = pd.Series(range(len(Y_test_inv)), name="DateTime") # Fallback
+        else:
+             test_dates.name = first_col_name # Keep original name if lengths match
     else:
-        test_dates = pd.Series(range(len(Y_test_inv)), name="DateTime")
-    
+        print(f"Warning: First column ('{first_col_name}') not named 'DateTime'. Using index for dates in output.")
+        test_dates = pd.Series(range(len(Y_test_inv)), name="DateTime") # Use index if no DateTime col
+
     output_df = pd.DataFrame({
-        "DateTime": test_dates,
-        target: Y_test_inv.flatten(),
+        test_dates.name: test_dates, # Use determined date column name
+        target: Y_test_inv.flatten(), # Use inferred target name as column header
         "pred": test_predict_inv.flatten()
     })
     output_df["error"] = (output_df[target] - output_df["pred"]).abs()
     csv_output = output_df.to_csv(index=False)
-    
-    # Return all results including training and testing metrics, along with plots and anomaly CSV
+
+    # Return all results
     result = {
         "train_loss": train_rmse,
         "test_loss": test_rmse,
@@ -223,6 +254,7 @@ def LSTM_FINAL(df, target, look_back=6):
         "test_accuracy": test_r2,
         "train_loss_curve": train_loss_curve,
         "test_predictions_plot": test_predictions_plot,
-        "anomaly_csv": csv_output
+        "anomaly_csv": csv_output,
+        "target_column_used": target # Add confirmation of target used
     }
     return result
