@@ -3,11 +3,13 @@
 import React, { useState, useContext } from "react";
 import { Box, Button, Card, CardContent, Grid, Typography } from "@mui/material";
 import { CsvContext } from "@/context/CsvContext";
+import { useRouter } from "next/navigation"; // or "next/router" if you're using the pages directory
 
 export default function AnomalyDetectionPage() {
   const { csvData } = useContext(CsvContext);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string>("");
+  const router = useRouter();
 
   // Handler to run anomaly detection using the CSV saved in context
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,34 +45,34 @@ export default function AnomalyDetectionPage() {
   };
 
   return (
-    <Box sx={{ p: 4, textAlign: "center", color: "white" }}>
+    <Box sx={{ p: 4, textAlign: "center", color: "white", position: "relative" }}>
       <Typography variant="h4" gutterBottom>
-      Anomaly Detection
+        Anomaly Detection
       </Typography>
       <Typography variant="subtitle1" gutterBottom>
-      Click to run anomaly detection
+        Click to run anomaly detection
       </Typography>
 
       <form onSubmit={handleSubmit}>
-      <Box
-        sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 2,
-        flexWrap: "wrap",
-        my: 2,
-        }}
-      >
-        <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={!csvData || (!csvData.xgb && !csvData.lstm)}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: "wrap",
+            my: 2,
+          }}
         >
-        🚀 Run Detection
-        </Button>
-      </Box>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={!csvData || (!csvData.xgb && !csvData.lstm)}
+          >
+            🚀 Run Detection
+          </Button>
+        </Box>
       </form>
 
       {error && (
@@ -135,6 +137,27 @@ export default function AnomalyDetectionPage() {
           </Grid>
         </Box>
       )}
+
+      {/* Floating Back Button */}
+      <Button
+        variant="outlined"
+        color="secondary"
+        onClick={() => router.back()}
+        sx={{
+          position: "fixed",
+          bottom: 24,
+          left: 24,
+          textTransform: "none",
+          zIndex: 1000,
+          backgroundColor: "white",
+          color: "black",
+          "&:hover": {
+            backgroundColor: "#f0f0f0",
+          },
+        }}
+      >
+        ⬅️ Back
+      </Button>
     </Box>
   );
 }
