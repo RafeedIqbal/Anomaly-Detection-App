@@ -1,8 +1,8 @@
-# ⚡ Anomaly Detection App
+# ⚡ E-Predict
 
 ## About
 
-The **Anomaly Detection App** is a powerful AI-driven tool designed to predict energy usage based on historical energy consumption and climate data. It offers detailed visualizations and highlights anomalies in energy patterns, helping users identify irregularities and optimize energy efficiency.
+The **E-Predict** is a powerful AI-driven tool designed to predict energy usage based on historical energy consumption and climate data. See detailed visualizations and highlight anomalies in energy patterns, helping identify irregularities and optimize energy efficiency.
 
 ---
 
