@@ -2,7 +2,7 @@
 
 ## About
 
-The **E-Predict** is a powerful AI-driven tool designed to predict energy usage based on historical energy consumption and climate data. See detailed visualizations and highlight anomalies in energy patterns, helping identify irregularities and optimize energy efficiency.
+**E-Predict** is a powerful AI-driven tool designed to predict energy usage based on historical energy consumption and climate data. See detailed visualizations and highlight anomalies in energy patterns, helping identify irregularities and optimize energy efficiency.
 
 ---
 
